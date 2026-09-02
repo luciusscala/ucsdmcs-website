@@ -11,10 +11,14 @@ npm run build
 
 | Route | File |
 | --- | --- |
-| `/` | `src/app/page.tsx` — hero, next match, season snapshot, fixtures/results, standings preview, tryouts |
-| `/roster` | `src/app/roster/page.tsx` — filterable squad + staff |
+| `/` | `src/app/page.tsx` — a short intro to the club beside an auto-advancing photo carousel, nothing else |
 | `/schedule` | `src/app/schedule/page.tsx` — upcoming fixtures and results |
+| `/roster` | `src/app/roster/page.tsx` — filterable squad + staff |
+| `/stats` | `src/app/stats/page.tsx` — team totals, form, leaders, per-player table |
 | `/standings` | `src/app/standings/page.tsx` — conference table |
+| `/articles` | `src/app/articles/page.tsx` — match reports and club news |
+| `/articles/[slug]` | `src/app/articles/[slug]/page.tsx` — one article, statically generated |
+| `/tryouts` | `src/app/tryouts/page.tsx` — sessions, eligibility, kit, dues, FAQ |
 
 ## Editing content
 
@@ -24,6 +28,12 @@ All copy and data live in plain TypeScript files — no CMS, no database.
 - `src/lib/data/schedule.ts` — fixtures and results (record and next match are derived from this)
 - `src/lib/data/standings.ts` — conference table (points and goal difference are derived)
 - `src/lib/data/roster.ts` — players, positions, staff and officers
+- `src/lib/data/home.ts` — the home page intro copy and the carousel running order
+- `src/lib/data/stats.ts` — per-player stat lines, keyed by jersey number so they
+  stay joined to `roster.ts`; team totals are derived from `schedule.ts`
+- `src/lib/data/articles.ts` — match reports and news; `body` is an array of
+  paragraphs, and `slug` becomes the URL
+- `src/lib/data/tryouts.ts` — sessions, eligibility, what to bring, dues and FAQ
 
 Player headshots: drop files in `public/images/` and set `photo: "/images/…"` on the player.
 Without a photo the card falls back to a navy tile with the jersey number.
@@ -54,27 +64,41 @@ condensed heading), `eyebrow` (small tracked-out all-caps label).
 ## Media
 
 - `public/logos/` — trident (primary mark, also the favicon via `src/app/icon.png`),
-  UC San Diego wordmark, UCSD Recreation, USCCS, NIRSA.
-- `public/images/` — banner photography, registered in `media` in `src/lib/site.ts`.
-  Each entry carries its intrinsic size, alt text and a `focus` (CSS `object-position`)
-  used when the photo is cropped into a wide band — adjust `focus` if a crop cuts
-  someone off. Currently: `lineups` (home hero), `teamPhoto` (roster header),
-  `huddleWide` (standings section), `huddle` (tryouts band).
+  UC San Diego wordmark, UCSD Recreation, USCCS, NIRSA. The `*-white.png` files are
+  single-color variants for use on navy, registered separately as `logosWhite` in
+  `src/lib/site.ts`. They were derived from the color originals by mapping ink to
+  white and light areas to transparent, which keeps knockout lettering — the USCCS
+  crest, the NIRSA banner — legible instead of flattening it into a solid shape.
+  Regenerate them the same way if an original is replaced.
+- `public/images/` — photography, registered in `media` in `src/lib/site.ts`. Each
+  entry carries its intrinsic size, alt text and a `focus` (CSS `object-position`)
+  used when the photo is cropped — adjust `focus` if a crop cuts someone off.
+  Currently: `breakaway`, `night`, `celebration` and `action` (the home carousel,
+  ordered in `src/lib/data/home.ts`), `teamPhoto` (roster header), `huddleWide`
+  (tryouts header).
 
 `inspiration/` is reference only and is not part of the build.
 
 ## Chrome
 
-Two-layer header: navy identity bar (trident in a blue keyline box, wordmark, and
-season/social links) over a gold navigation bar, matching UC San Diego athletics. The
-nav bar scrolls horizontally on narrow screens rather than collapsing into a menu.
-Footer is a white affiliations band — logos desaturated and faded, full color on
-hover — above a navy three-column footer.
+Two-layer header: a navy identity bar holding the trident alone, over a gold navigation
+bar, matching UC San Diego athletics. Nav labels are small tracked-out caps; a navy
+underline slides between them, following the hovered or focused link and returning to
+the current page on mouse-out. The bar scrolls horizontally on narrow screens rather
+than collapsing into a menu.
+Footer is a single navy block, trimmed to essentials: trident and club name, the
+university mailing address, and contact links, over a centered row of affiliation
+logos in white.
+
+The home carousel crossfades on a 5s timer, pauses on hover, and sits out entirely
+under `prefers-reduced-motion`. Progress dots below the card are the only control.
 
 ## Photo sizing
 
-The supplied photos are 1024–1348px wide. A full-bleed banner on a 1440px retina screen
-asks for ~2880px, so anything full-width from these sources renders soft. Every photo is
-therefore placed at half-width or less (`SplitHero`, the standings and tryouts sections),
-which keeps them at or near 1:1 pixels. If higher-resolution originals turn up (2400px+),
-`SplitHero` can go full-bleed without changing anything else.
+Sources are small: the match photos are 800px wide, the two older banners 1024–1086px.
+A full-bleed banner on a 1440px retina screen asks for ~2880px, so anything full-width
+from these renders soft. Every photo is therefore placed at half-width or less —
+`SplitHero` and the tryouts header take a column, and the home carousel card is capped
+at `max-w-[38rem]` (608px) so the 800px files are never upscaled at 1x and stay
+reasonable at 2x. If higher-resolution originals turn up (2400px+), raising that cap
+and letting `SplitHero` go full-bleed are the only changes needed.

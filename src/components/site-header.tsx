@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logos, nav, site } from "@/lib/site";
+import { useEffect, useRef, useState } from "react";
+import { logos, nav } from "@/lib/site";
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -11,69 +12,99 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const activeIndex = nav.findIndex((item) => isActive(pathname, item.href));
+
+  /** Item the underline is currently pointing at: hovered/focused one, else active. */
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [underline, setUnderline] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const target = previewIndex ?? activeIndex;
+
+  // Measure the target link so the underline can slide to it. Re-measures on
+  // resize and web-font swap, both of which change the link's width. Runs in an
+  // effect rather than a layout effect so it stays inert during SSR; nothing is
+  // rendered until a measurement exists, so there is no flash of a stray bar.
+  useEffect(() => {
+    const el = target >= 0 ? itemRefs.current[target] : null;
+    if (!el) {
+      setUnderline(null);
+      return;
+    }
+
+    const measure = () =>
+      setUnderline({ left: el.offsetLeft, width: el.offsetWidth });
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    if (listRef.current) observer.observe(listRef.current);
+    return () => observer.disconnect();
+  }, [target]);
 
   return (
     <header>
-      {/* Identity bar */}
+      {/* Identity bar — the trident, nothing else */}
       <div className="bg-navy">
-        <div className="container-page flex h-[4.5rem] items-center justify-between gap-6">
-          <Link href="/" className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center border-2 border-blue">
-              <Image
-                src={logos.trident}
-                alt=""
-                width={900}
-                height={901}
-                priority
-                className="h-10 w-10 object-contain"
-              />
-            </span>
-            <span className="headline text-lg leading-[1.1] text-white sm:text-xl">
-              UC San Diego
-              <span className="block">Men&apos;s Club Soccer</span>
-            </span>
+        <div className="container-page flex h-[4.5rem] items-center">
+          <Link href="/" aria-label="UC San Diego Men's Club Soccer — home">
+            <Image
+              src={logos.trident}
+              alt=""
+              width={900}
+              height={901}
+              priority
+              className="h-12 w-12 object-contain"
+            />
           </Link>
-
-          <div className="hidden items-center gap-6 sm:flex">
-            <span className="eyebrow text-[0.625rem] text-white/45">
-              {site.season} Season
-            </span>
-            <a
-              href={site.instagram}
-              className="eyebrow text-[0.6875rem] text-white/80 transition-colors hover:text-yellow"
-            >
-              Instagram
-            </a>
-            <a
-              href={`mailto:${site.email}`}
-              className="eyebrow text-[0.6875rem] text-white/80 transition-colors hover:text-yellow"
-            >
-              Contact
-            </a>
-          </div>
         </div>
       </div>
 
       {/* Navigation bar */}
       <nav className="relative bg-yellow">
-        <div className="container-page flex gap-8 overflow-x-auto sm:gap-12">
-          {nav.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`headline shrink-0 border-b-4 py-3.5 text-base whitespace-nowrap transition-colors sm:text-lg ${
-                  active
-                    ? "border-navy text-navy"
-                    : "border-transparent text-navy/70 hover:text-navy"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="container-page">
+          <div
+            ref={listRef}
+            className="relative flex gap-6 overflow-x-auto sm:gap-9"
+            onMouseLeave={() => setPreviewIndex(null)}
+          >
+            {nav.map((item, index) => {
+              const active = index === activeIndex;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  aria-current={active ? "page" : undefined}
+                  onMouseEnter={() => setPreviewIndex(index)}
+                  onFocus={() => setPreviewIndex(index)}
+                  onBlur={() => setPreviewIndex(null)}
+                  className={`eyebrow shrink-0 py-3.5 text-[0.6875rem] whitespace-nowrap transition-colors duration-200 ${
+                    active ? "text-navy" : "text-navy/60 hover:text-navy"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+
+            {underline && (
+              <span
+                aria-hidden
+                className="absolute bottom-0 left-0 h-[3px] bg-navy transition-[transform,width] duration-300 ease-out"
+                style={{
+                  transform: `translateX(${underline.left}px)`,
+                  width: underline.width,
+                }}
+              />
+            )}
+          </div>
         </div>
         <div
           aria-hidden
