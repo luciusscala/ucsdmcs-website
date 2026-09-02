@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UC San Diego Men's Club Soccer
 
-## Getting Started
-
-First, run the development server:
+Next.js (App Router) + TypeScript + Tailwind CSS v4.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev   # http://localhost:3000
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pages
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | File |
+| --- | --- |
+| `/` | `src/app/page.tsx` — hero, next match, season snapshot, fixtures/results, standings preview, tryouts |
+| `/roster` | `src/app/roster/page.tsx` — filterable squad + staff |
+| `/schedule` | `src/app/schedule/page.tsx` — upcoming fixtures and results |
+| `/standings` | `src/app/standings/page.tsx` — conference table |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Editing content
 
-## Learn More
+All copy and data live in plain TypeScript files — no CMS, no database.
 
-To learn more about Next.js, take a look at the following resources:
+- `src/lib/site.ts` — club name, season, league, venue, email, socials, nav, logo paths
+- `src/lib/data/schedule.ts` — fixtures and results (record and next match are derived from this)
+- `src/lib/data/standings.ts` — conference table (points and goal difference are derived)
+- `src/lib/data/roster.ts` — players, positions, staff and officers
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Player headshots: drop files in `public/images/` and set `photo: "/images/…"` on the player.
+Without a photo the card falls back to a navy tile with the jersey number.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Design system
 
-## Deploy on Vercel
+`src/app/globals.css` holds the whole system.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Palette** — official UC San Diego brand colors on white:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Token | Hex | Use |
+| --- | --- | --- |
+| `navy` | `#182B49` | Body text, dark sections, table header |
+| `blue` | `#00629B` | Links, eyebrows, secondary accents |
+| `yellow` | `#FFCD00` | Accent rules, active nav, badges (on navy only) |
+| `gold` | `#C69214` | Accent for yellow-on-white situations |
+
+Supporting neutrals (`surface`, `muted`, `border`, `border-strong`) and result colors
+(`win`, `loss`, `draw`) are defined alongside them. Every token is a Tailwind utility —
+`bg-navy`, `text-blue`, `border-yellow`, and so on.
+
+**Type** — Barlow Condensed for display (`headline`, `eyebrow` utilities), Inter for body,
+both self-hosted via `next/font`.
+
+**Custom utilities** — `container-page` (page gutter + max width), `headline` (uppercase
+condensed heading), `eyebrow` (small tracked-out all-caps label).
+
+## Media
+
+- `public/logos/` — trident (primary mark, also the favicon via `src/app/icon.png`),
+  UC San Diego wordmark, UCSD Recreation, USCCS, NIRSA.
+- `public/images/` — banner photography, registered in `media` in `src/lib/site.ts`.
+  Each entry carries its intrinsic size, alt text and a `focus` (CSS `object-position`)
+  used when the photo is cropped into a wide band — adjust `focus` if a crop cuts
+  someone off. Currently: `lineups` (home hero), `teamPhoto` (roster header),
+  `huddleWide` (standings section), `huddle` (tryouts band).
+
+`inspiration/` is reference only and is not part of the build.
+
+## Chrome
+
+Two-layer header: navy identity bar (trident in a blue keyline box, wordmark, and
+season/social links) over a gold navigation bar, matching UC San Diego athletics. The
+nav bar scrolls horizontally on narrow screens rather than collapsing into a menu.
+Footer is a white affiliations band — logos desaturated and faded, full color on
+hover — above a navy three-column footer.
+
+## Photo sizing
+
+The supplied photos are 1024–1348px wide. A full-bleed banner on a 1440px retina screen
+asks for ~2880px, so anything full-width from these sources renders soft. Every photo is
+therefore placed at half-width or less (`SplitHero`, the standings and tryouts sections),
+which keeps them at or near 1:1 pixels. If higher-resolution originals turn up (2400px+),
+`SplitHero` can go full-bleed without changing anything else.

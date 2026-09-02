@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   UC San Diego Men's Club Soccer — design system
+   Palette is the official UC San Diego brand set, on white.
+   --------------------------------------------------------------------------- */
+
 :root {
+  /* Brand */
+  --navy: #182b49; /* Pantone 2767 */
+  --blue: #00629b; /* Pantone 3015 */
+  --yellow: #ffcd00; /* Pantone 116 */
+  --gold: #c69214; /* Pantone 1245 */
+
+  /* Neutrals derived from navy so greys stay in family */
   --background: #ffffff;
-  --foreground: #171717;
+  --surface: #f6f7f9;
+  --foreground: var(--navy);
+  --muted: #5a6b82;
+  --border: #e3e7ed;
+  --border-strong: #cbd3de;
+
+  /* Semantic result colors */
+  --win: #1a7f4b;
+  --loss: #b3261e;
+  --draw: #6b7280;
 }
 
-@theme inline {
+@theme static inline {
+  --color-navy: var(--navy);
+  --color-blue: var(--blue);
+  --color-yellow: var(--yellow);
+  --color-gold: var(--gold);
+
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --color-draw: var(--draw);
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--navy);
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* --- Reusable primitives -------------------------------------------------- */
+
+@utility container-page {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+/* Uppercase condensed headline, the site's signature type treatment */
+@utility headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+}
+
+/* Small all-caps label above a heading or beside metadata */
+@utility eyebrow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+/* Aligns a full-bleed split section's text with the page container gutter */
+@utility pad-gutter-l {
+  padding-left: max(1.25rem, calc((100vw - 76rem) / 2));
+}
+
+@utility pad-gutter-r {
+  padding-right: max(1.25rem, calc((100vw - 76rem) / 2));
 }
