@@ -1,48 +1,42 @@
 import Image from "next/image";
-import type { Player } from "@/lib/data/roster";
+
+import { type Player, initialsOf } from "@/lib/data/roster";
 
 export function PlayerCard({ player }: { player: Player }) {
   return (
-    <article className="flex gap-4 rounded-lg border border-border bg-background p-4 transition-colors hover:border-blue">
-      {player.photo ? (
-        <Image
-          src={player.photo}
-          alt={player.name}
-          width={160}
-          height={160}
-          className="h-16 w-16 shrink-0 rounded object-cover object-top"
-        />
-      ) : (
-        <span className="headline flex h-16 w-16 shrink-0 items-center justify-center rounded bg-navy text-2xl text-white">
-          {player.number}
-        </span>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <p className="headline truncate text-xl text-navy">
-            {player.name}
-            {player.captain && (
-              <span
-                title="Captain"
-                className="ml-2 align-middle text-sm text-gold"
-              >
-                (C)
-              </span>
-            )}
-          </p>
-          <span className="eyebrow shrink-0 rounded bg-surface px-2 py-1 text-[0.625rem] text-blue">
-            {player.position}
-          </span>
-        </div>
-        <p className="mt-1 truncate text-sm text-muted">
-          {player.photo ? `#${player.number} · ` : ""}
-          {player.year} · {player.hometown}
-        </p>
-        {player.major && (
-          <p className="mt-0.5 truncate text-sm text-muted/75">{player.major}</p>
+    <li>
+      <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-surface">
+        {player.headshot ? (
+          <Image
+            src={player.headshot}
+            alt={player.name}
+            fill
+            // Two across on phones, three on tablets, four on desktop.
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center">
+            <span className="headline text-3xl text-border-strong">
+              {initialsOf(player.name)}
+            </span>
+          </div>
         )}
       </div>
-    </article>
+
+      <p className="mt-3 flex items-baseline gap-2">
+        {player.number !== null && (
+          <span className="shrink-0 text-sm tabular-nums text-muted">
+            {player.number}
+          </span>
+        )}
+        <span className="headline text-lg">{player.name}</span>
+      </p>
+
+      <p className="mt-0.5 text-sm text-muted">
+        {player.year}
+        {player.hometown && ` · ${player.hometown}`}
+      </p>
+    </li>
   );
 }

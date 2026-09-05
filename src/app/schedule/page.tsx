@@ -1,106 +1,77 @@
 import type { Metadata } from "next";
+
 import { MatchRow } from "@/components/match-row";
-import { HeroStats, PageHero } from "@/components/page-hero";
-import { SectionHeading } from "@/components/section-heading";
-import {
-  type Match,
-  finalMatches,
-  seasonRecord,
-  upcomingMatches,
-} from "@/lib/data/schedule";
-import { formatMonth } from "@/lib/format";
-import { site } from "@/lib/site";
+import { type Game, getGames, seasonRecord } from "@/lib/data/schedule";
 
 export const metadata: Metadata = {
   title: "Schedule & Results",
-  description: `Fixtures and results for the ${site.season} UC San Diego men's club soccer season.`,
+  description:
+    "Every fixture and result for UC San Diego men's club soccer, in chronological order.",
 };
 
-function groupByMonth(matches: Match[]) {
-  const groups: { month: string; matches: Match[] }[] = [];
-  for (const match of matches) {
-    const month = formatMonth(match.date);
-    const last = groups.at(-1);
-    if (last?.month === month) last.matches.push(match);
-    else groups.push({ month, matches: [match] });
-  }
-  return groups;
-}
+/** Serve a static page, refreshed at most every five minutes. */
+export const revalidate = 300;
 
-export default function SchedulePage() {
-  const upcoming = upcomingMatches();
-  const results = finalMatches();
-  const record = seasonRecord();
+function RecordStrip({ games }: { games: Game[] }) {
+  const record = seasonRecord(games);
+  if (record.played === 0) return null;
+
+  const stats = [
+    { label: "Record", value: `${record.w}–${record.d}–${record.l}` },
+    { label: "Played", value: String(record.played) },
+    { label: "Goals For", value: String(record.gf) },
+    { label: "Goals Against", value: String(record.ga) },
+  ];
 
   return (
-    <>
-      <PageHero
-        eyebrow={`${site.season} Season`}
-        title="Schedule & Results"
-        description={`Every fixture in the ${site.league}, plus postseason play. Home matches at ${site.homeVenue}.`}
-        aside={
-          <HeroStats
-            stats={[
-              { label: "Record", value: `${record.w}–${record.d}–${record.l}` },
-              { label: "Played", value: String(results.length) },
-              { label: "Goals For", value: String(record.gf) },
-              { label: "Goals Against", value: String(record.ga) },
-            ]}
-          />
-        }
-      />
-
-      <nav className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="container-page flex gap-8">
-          <a href="#upcoming" className="eyebrow py-4 text-navy hover:text-blue">
-            Upcoming ({upcoming.length})
-          </a>
-          <a href="#results" className="eyebrow py-4 text-navy hover:text-blue">
-            Results ({results.length})
-          </a>
+    <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-border sm:grid-cols-4">
+      {stats.map((stat) => (
+        <div key={stat.label} className="bg-surface px-4 py-3">
+          <dt className="text-sm text-muted">{stat.label}</dt>
+          <dd className="headline mt-0.5 text-2xl tabular-nums">{stat.value}</dd>
         </div>
-      </nav>
+      ))}
+    </dl>
+  );
+}
 
-      <section id="upcoming" className="container-page scroll-mt-24 py-14">
-        <SectionHeading eyebrow="Fixtures" title="Upcoming" />
-        {upcoming.length === 0 ? (
-          <p className="py-10 text-muted">No matches scheduled right now.</p>
-        ) : (
-          groupByMonth(upcoming).map((group) => (
-            <div key={group.month} className="mb-10 last:mb-0">
-              <p className="eyebrow mb-2 text-blue">{group.month}</p>
-              <ul className="border-t border-border">
-                {group.matches.map((match) => (
-                  <MatchRow key={match.id} match={match} />
-                ))}
-              </ul>
-            </div>
-          ))
-        )}
-      </section>
+export default async function SchedulePage() {
+  // A Supabase outage or a missing RLS policy shouldn't fail the whole build,
+  // so failure degrades to an error state on this page. It stays distinct from
+  // the empty state below — "unavailable" must never read as "no games yet".
+  let games: Game[] = [];
+  let failed = false;
 
-      <section
-        id="results"
-        className="scroll-mt-24 border-t border-border bg-surface py-16"
-      >
-        <div className="container-page">
-          <SectionHeading eyebrow="Final scores" title="Results" />
-          {results.length === 0 ? (
-            <p className="py-10 text-muted">No results yet this season.</p>
-          ) : (
-            groupByMonth(results).map((group) => (
-              <div key={group.month} className="mb-10 last:mb-0">
-                <p className="eyebrow mb-2 text-blue">{group.month}</p>
-                <ul className="border-t border-border">
-                  {group.matches.map((match) => (
-                    <MatchRow key={match.id} match={match} />
-                  ))}
-                </ul>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-    </>
+  try {
+    games = await getGames();
+  } catch (error) {
+    console.error(error);
+    failed = true;
+  }
+
+  return (
+    <div className="container-page py-12 sm:py-16">
+      <header>
+        <p className="text-sm font-medium text-blue">Men&rsquo;s Club Soccer</p>
+        <h1 className="headline mt-1 text-4xl sm:text-5xl">
+          Schedule &amp; Results
+        </h1>
+        <RecordStrip games={games} />
+      </header>
+
+      {failed ? (
+        <p className="py-16 text-muted">
+          The schedule is unavailable right now. Please check back shortly.
+        </p>
+      ) : games.length === 0 ? (
+        <p className="py-16 text-muted">No games on the schedule yet.</p>
+      ) : (
+        <ul className="mt-10 border-t border-border">
+          {games.map((game) => (
+            <MatchRow key={game.id} game={game} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

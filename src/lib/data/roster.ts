@@ -1,57 +1,91 @@
-export type Position = "GK" | "DEF" | "MID" | "FWD";
+import { headshotUrl, supabase } from "@/lib/supabase";
+
+/** Mirrors the `players` table. */
+type PlayerRow = {
+  id: string;
+  name: string;
+  class: string;
+  position: string;
+  number: number | null;
+  hometown: string | null;
+  headshot_path: string | null;
+};
 
 export type Player = {
-  number: number;
+  id: string;
   name: string;
-  position: Position;
+  /** Freshman | Sophomore | Junior | Senior, per the valid_class constraint. */
   year: string;
-  hometown: string;
-  major?: string;
-  /** Drop headshots in /public/images and reference them here, e.g. "/images/players/10.jpg" */
-  photo?: string;
-  captain?: boolean;
+  position: string;
+  number: number | null;
+  hometown: string | null;
+  /** Already resolved to a public URL; null when the player has no headshot. */
+  headshot: string | null;
 };
 
-export const positionLabels: Record<Position, string> = {
-  GK: "Goalkeepers",
-  DEF: "Defenders",
-  MID: "Midfielders",
-  FWD: "Forwards",
-};
+/**
+ * Sections run back-to-front the way a lineup is read. Goalkeeper is listed
+ * ahead of the current valid_position constraint, which omits it — any
+ * position not named here still renders, in a trailing group.
+ */
+const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
-export const positionOrder: Position[] = ["GK", "DEF", "MID", "FWD"];
+function toPlayer(row: PlayerRow): Player {
+  return {
+    id: row.id,
+    name: row.name,
+    year: row.class,
+    position: row.position,
+    number: row.number,
+    hometown: row.hometown,
+    headshot: headshotUrl(row.headshot_path),
+  };
+}
 
-/** TODO: replace with the real roster. */
-export const roster: Player[] = [
-  { number: 1, name: "Player One", position: "GK", year: "Junior", hometown: "San Diego, CA", major: "Cognitive Science" },
-  { number: 12, name: "Player Two", position: "GK", year: "Freshman", hometown: "Sacramento, CA", major: "Biology" },
-  { number: 2, name: "Player Three", position: "DEF", year: "Senior", hometown: "Irvine, CA", major: "Mechanical Engineering", captain: true },
-  { number: 3, name: "Player Four", position: "DEF", year: "Sophomore", hometown: "Portland, OR", major: "Economics" },
-  { number: 4, name: "Player Five", position: "DEF", year: "Junior", hometown: "Phoenix, AZ", major: "Data Science" },
-  { number: 5, name: "Player Six", position: "DEF", year: "Senior", hometown: "San Jose, CA", major: "Political Science" },
-  { number: 15, name: "Player Seven", position: "DEF", year: "Freshman", hometown: "Denver, CO", major: "Undeclared" },
-  { number: 6, name: "Player Eight", position: "MID", year: "Junior", hometown: "Los Angeles, CA", major: "Computer Science" },
-  { number: 8, name: "Player Nine", position: "MID", year: "Senior", hometown: "Seattle, WA", major: "Public Health", captain: true },
-  { number: 10, name: "Player Ten", position: "MID", year: "Sophomore", hometown: "Austin, TX", major: "Mathematics" },
-  { number: 14, name: "Player Eleven", position: "MID", year: "Junior", hometown: "Fresno, CA", major: "Communication" },
-  { number: 16, name: "Player Twelve", position: "MID", year: "Freshman", hometown: "Chicago, IL", major: "Bioengineering" },
-  { number: 7, name: "Player Thirteen", position: "FWD", year: "Sophomore", hometown: "Oakland, CA", major: "Business Psychology" },
-  { number: 9, name: "Player Fourteen", position: "FWD", year: "Senior", hometown: "Boston, MA", major: "Structural Engineering" },
-  { number: 11, name: "Player Fifteen", position: "FWD", year: "Junior", hometown: "Miami, FL", major: "International Studies" },
-  { number: 17, name: "Player Sixteen", position: "FWD", year: "Freshman", hometown: "Honolulu, HI", major: "Undeclared" },
-];
+/** Every player, by squad number with unnumbered players last, then by name. */
+export async function getPlayers(): Promise<Player[]> {
+  if (!supabase) return [];
 
-export type StaffMember = {
-  name: string;
-  role: string;
-};
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, name, class, position, number, hometown, headshot_path")
+    .order("number", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
 
-/** TODO: replace with the real staff and officers. */
-export const staff: StaffMember[] = [
-  { name: "Head Coach Name", role: "Head Coach" },
-  { name: "Assistant Coach Name", role: "Assistant Coach" },
-  { name: "Officer Name", role: "President" },
-  { name: "Officer Name", role: "Vice President" },
-  { name: "Officer Name", role: "Treasurer" },
-  { name: "Officer Name", role: "Social Chair" },
-];
+  if (error) throw new Error(`Failed to load players: ${error.message}`);
+
+  return (data as unknown as PlayerRow[]).map(toPlayer);
+}
+
+/** Groups into position sections, keeping any unrecognised position visible. */
+export function groupByPosition(players: Player[]) {
+  const groups = new Map<string, Player[]>();
+
+  for (const player of players) {
+    const group = groups.get(player.position);
+    if (group) group.push(player);
+    else groups.set(player.position, [player]);
+  }
+
+  const rank = (position: string) => {
+    const index = POSITION_ORDER.indexOf(position);
+    return index === -1 ? POSITION_ORDER.length : index;
+  };
+
+  return [...groups.entries()]
+    .map(([position, squad]) => ({ position, players: squad }))
+    .sort((a, b) => rank(a.position) - rank(b.position) || a.position.localeCompare(b.position));
+}
+
+/** Pluralised section heading: "Defenders", "Midfielders". */
+export const positionLabel = (position: string) =>
+  position.endsWith("s") ? position : `${position}s`;
+
+/** "AC" from "Ada Chen" — the headshot placeholder. */
+export const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");

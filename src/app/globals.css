@@ -10,7 +10,6 @@
   --navy: #182b49; /* Pantone 2767 */
   --blue: #00629b; /* Pantone 3015 */
   --yellow: #ffcd00; /* Pantone 116 */
-  --gold: #c69214; /* Pantone 1245 */
 
   /* Neutrals derived from navy so greys stay in family */
   --background: #ffffff;
@@ -19,18 +18,12 @@
   --muted: #5a6b82;
   --border: #e3e7ed;
   --border-strong: #cbd3de;
-
-  /* Semantic result colors */
-  --win: #1a7f4b;
-  --loss: #b3261e;
-  --draw: #6b7280;
 }
 
 @theme static inline {
   --color-navy: var(--navy);
   --color-blue: var(--blue);
   --color-yellow: var(--yellow);
-  --color-gold: var(--gold);
 
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -38,13 +31,8 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
-
-  --color-win: var(--win);
-  --color-loss: var(--loss);
-  --color-draw: var(--draw);
-
+  
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, sans-serif;
 }
 
 body {
@@ -73,23 +61,13 @@ body {
   padding-inline: 1.25rem;
 }
 
-/* Uppercase condensed headline, the site's signature type treatment */
+/* Headings. One typeface throughout: hierarchy comes from weight and size,
+   not from caps or a condensed face. The slight negative tracking keeps large
+   sizes from looking loose. */
 @utility headline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  line-height: 0.95;
-}
-
-/* Small all-caps label above a heading or beside metadata */
-@utility eyebrow {
-  font-family: var(--font-display);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.8125rem;
-  line-height: 1.2;
+  letter-spacing: -0.021em;
+  line-height: 1.15;
 }
 
 /* Aligns a full-bleed split section's text with the page container gutter */

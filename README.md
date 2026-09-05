@@ -11,7 +11,7 @@ npm run build
 
 | Route | File |
 | --- | --- |
-| `/` | `src/app/page.tsx` — a short intro to the club beside an auto-advancing photo carousel, nothing else |
+| `/` | `src/app/page.tsx` — masthead over a photo grid, one card per section |
 | `/schedule` | `src/app/schedule/page.tsx` — upcoming fixtures and results |
 | `/roster` | `src/app/roster/page.tsx` — filterable squad + staff |
 | `/stats` | `src/app/stats/page.tsx` — team totals, form, leaders, per-player table |
@@ -28,7 +28,7 @@ All copy and data live in plain TypeScript files — no CMS, no database.
 - `src/lib/data/schedule.ts` — fixtures and results (record and next match are derived from this)
 - `src/lib/data/standings.ts` — conference table (points and goal difference are derived)
 - `src/lib/data/roster.ts` — players, positions, staff and officers
-- `src/lib/data/home.ts` — the home page intro copy and the carousel running order
+- `src/lib/data/home.ts` — the home page masthead copy and the photo grid (`showcase`)
 - `src/lib/data/stats.ts` — per-player stat lines, keyed by jersey number so they
   stay joined to `roster.ts`; team totals are derived from `schedule.ts`
 - `src/lib/data/articles.ts` — match reports and news; `body` is an array of
@@ -90,15 +90,15 @@ Footer is a single navy block, trimmed to essentials: trident and club name, the
 university mailing address, and contact links, over a centered row of affiliation
 logos in white.
 
-The home carousel crossfades on a 5s timer, pauses on hover, and sits out entirely
-under `prefers-reduced-motion`. Progress dots below the card are the only control.
+Nav labels are Inter medium at 13px in sentence case, not condensed caps — the
+`eyebrow` treatment is reserved for small labels elsewhere.
 
 ## Photo sizing
 
 Sources are small: the match photos are 800px wide, the two older banners 1024–1086px.
 A full-bleed banner on a 1440px retina screen asks for ~2880px, so anything full-width
 from these renders soft. Every photo is therefore placed at half-width or less —
-`SplitHero` and the tryouts header take a column, and the home carousel card is capped
-at `max-w-[38rem]` (608px) so the 800px files are never upscaled at 1x and stay
-reasonable at 2x. If higher-resolution originals turn up (2400px+), raising that cap
-and letting `SplitHero` go full-bleed are the only changes needed.
+`SplitHero` and the tryouts header take a column, and the home grid renders three
+across at roughly 370px per card — comfortably retina-sharp from an 800px source.
+If higher-resolution originals turn up (2400px+), `SplitHero` can go full-bleed
+without changing anything else.

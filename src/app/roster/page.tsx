@@ -1,51 +1,66 @@
 import type { Metadata } from "next";
-import { SplitHero } from "@/components/split-hero";
-import { RosterFilter } from "@/components/roster-filter";
-import { SectionHeading } from "@/components/section-heading";
-import { roster, staff } from "@/lib/data/roster";
-import { media, site } from "@/lib/site";
+
+import { PlayerCard } from "@/components/player-card";
+import {
+  type Player,
+  getPlayers,
+  groupByPosition,
+  positionLabel,
+} from "@/lib/data/roster";
 
 export const metadata: Metadata = {
   title: "Roster",
-  description: `The ${site.season} UC San Diego men's club soccer roster and staff.`,
+  description: "The full UC San Diego men's club soccer squad, by position.",
 };
 
-export default function RosterPage() {
+/** Serve a static page, refreshed at most every five minutes. */
+export const revalidate = 300;
+
+export default async function RosterPage() {
+  // As on the schedule, a Supabase outage degrades to an error state rather
+  // than failing the build. "Unavailable" stays distinct from "no players".
+  let players: Player[] = [];
+  let failed = false;
+
+  try {
+    players = await getPlayers();
+  } catch (error) {
+    console.error(error);
+    failed = true;
+  }
+
+  const groups = groupByPosition(players);
+
   return (
-    <>
-      <SplitHero
-        media={media.teamPhoto}
-        eyebrow={`${site.season} Season`}
-        title="Roster"
-        priority
-      >
-        <p className="mt-4 max-w-md text-sm text-white/70">
-          {roster.length} players · {site.league}
+    <div className="container-page py-12 sm:py-16">
+      <header>
+        <p className="text-sm font-medium text-blue">Men&rsquo;s Club Soccer</p>
+        <h1 className="headline mt-1 text-4xl sm:text-5xl">Roster</h1>
+        {players.length > 0 && (
+          <p className="mt-3 text-sm text-muted">{players.length} players</p>
+        )}
+      </header>
+
+      {failed ? (
+        <p className="py-16 text-muted">
+          The roster is unavailable right now. Please check back shortly.
         </p>
-      </SplitHero>
-
-      <section className="container-page py-14">
-        <RosterFilter players={roster} />
-      </section>
-
-      <section className="border-t border-border bg-surface py-14">
-        <div className="container-page">
-          <SectionHeading eyebrow="Behind the squad" title="Staff & Officers" />
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {staff.map((member) => (
-              <li
-                key={`${member.role}-${member.name}`}
-                className="border-l-[3px] border-blue bg-background px-5 py-4"
-              >
-                <p className="eyebrow text-[0.6875rem] text-blue">
-                  {member.role}
-                </p>
-                <p className="headline mt-1 text-xl text-navy">{member.name}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    </>
+      ) : players.length === 0 ? (
+        <p className="py-16 text-muted">No players listed yet.</p>
+      ) : (
+        groups.map((group) => (
+          <section key={group.position} className="mt-12">
+            <h2 className="border-b border-border pb-2 text-sm font-semibold text-blue">
+              {positionLabel(group.position)}
+            </h2>
+            <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+              {group.players.map((player) => (
+                <PlayerCard key={player.id} player={player} />
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
+    </div>
   );
 }

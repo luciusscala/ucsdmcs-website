@@ -1,40 +1,29 @@
 /**
- * All dates are formatted in the club's local timezone so server and client
- * render identically (no hydration mismatch).
+ * Every date is rendered in the team's local zone rather than the server's, so
+ * a build machine in UTC can't shift a 7pm kickoff onto the following day.
  */
-const TZ = "America/Los_Angeles";
+const TIME_ZONE = "America/Los_Angeles";
 
-const fmt = (opts: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat("en-US", { timeZone: TZ, ...opts });
+const fmt = (options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat("en-US", { ...options, timeZone: TIME_ZONE });
 
-/**
- * Date-only strings ("2026-09-27") parse as UTC midnight, which lands on the
- * previous day once formatted in Pacific time — anchor those to midday UTC.
- * Full timestamps carry their own offset and pass through untouched.
- */
-const parse = (iso: string) =>
-  new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T12:00:00Z` : iso);
+const dayFormat = fmt({ month: "short", day: "numeric" });
+const weekdayFormat = fmt({ weekday: "short" });
+const hourFormat = fmt({ hour: "numeric" });
+const hourMinuteFormat = fmt({ hour: "numeric", minute: "2-digit" });
 
-export const formatMatchDate = (iso: string) =>
-  fmt({ weekday: "short", month: "short", day: "numeric" }).format(parse(iso));
+/** "Oct 24 (Sat)" — each row carries its own month, so the list needs no headings. */
+export function formatGameDate(iso: string) {
+  const date = new Date(iso);
+  return `${dayFormat.format(date)} (${weekdayFormat.format(date)})`;
+}
 
-export const formatMatchDateLong = (iso: string) =>
-  fmt({ weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(
-    parse(iso),
-  );
+/** "7 PM", or "7:30 PM" when the kickoff isn't on the hour. */
+export function formatTime(iso: string) {
+  const date = new Date(iso);
+  const minute = hourMinuteFormat
+    .formatToParts(date)
+    .find((part) => part.type === "minute")?.value;
 
-export const formatMatchTime = (iso: string) =>
-  fmt({ hour: "numeric", minute: "2-digit" }).format(parse(iso));
-
-export const formatMonth = (iso: string) =>
-  fmt({ month: "long", year: "numeric" }).format(parse(iso));
-
-export const formatDayNumber = (iso: string) =>
-  fmt({ day: "numeric" }).format(parse(iso));
-
-export const formatMonthShort = (iso: string) =>
-  fmt({ month: "short" }).format(parse(iso));
-
-/** Article bylines: "October 4, 2026". */
-export const formatArticleDate = (iso: string) =>
-  fmt({ month: "long", day: "numeric", year: "numeric" }).format(parse(iso));
+  return minute === "00" ? hourFormat.format(date) : hourMinuteFormat.format(date);
+}

@@ -1,52 +1,57 @@
-import { ResultBadge } from "@/components/result-badge";
-import { type Match, outcomeOf } from "@/lib/data/schedule";
-import {
-  formatDayNumber,
-  formatMatchTime,
-  formatMonthShort,
-} from "@/lib/format";
+import Image from "next/image";
 
-export function MatchRow({ match }: { match: Match }) {
-  const outcome = outcomeOf(match);
+import { type Game, hasResult, outcome } from "@/lib/data/schedule";
+import { formatGameDate, formatTime } from "@/lib/format";
+
+export function MatchRow({ game }: { game: Game }) {
+  const result = outcome(game);
+  const played = hasResult(game);
 
   return (
-    <li className="flex items-center gap-4 border-b border-border py-5 last:border-b-0 sm:gap-6">
-      <div className="flex w-14 shrink-0 flex-col items-center rounded-md border border-border bg-surface py-2">
-        <span className="eyebrow text-[0.6875rem] text-blue">
-          {formatMonthShort(match.date)}
-        </span>
-        <span className="headline text-2xl text-navy">
-          {formatDayNumber(match.date)}
-        </span>
+    <li className="-mx-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 even:bg-surface">
+      {/* Fixed box whether or not a crest exists, so names stay on one edge. */}
+      <div className="flex size-12 shrink-0 items-center justify-center">
+        {game.opponentLogo && (
+          <Image
+            src={game.opponentLogo}
+            // Decorative: the school name sits immediately beside it.
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 object-contain"
+          />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="eyebrow text-[0.6875rem] text-muted">
-          {match.home ? "Home" : "Away"} · {match.competition}
+        <p className="text-sm">
+          <span className="font-medium">{formatGameDate(game.kickoff)}</span>
+          {!played && (
+            <span className="text-muted"> / {formatTime(game.kickoff)}</span>
+          )}
         </p>
-        <p className="headline mt-1 truncate text-xl text-navy sm:text-2xl">
-          {match.home ? "vs" : "at"} {match.opponent}
-        </p>
-        <p className="mt-1 truncate text-sm text-muted">
-          {match.venue}
-          {match.note ? ` · ${match.note}` : ""}
+        <p className="mt-0.5 flex items-center gap-2">
+          <span className="shrink-0 rounded-sm bg-navy px-1.5 py-0.5 text-xs font-bold uppercase text-yellow">
+            {game.isHome ? "vs" : "at"}
+          </span>
+          <span className="headline truncate text-lg sm:text-xl">
+            {game.opponent}
+          </span>
         </p>
       </div>
 
-      <div className="shrink-0 text-right">
-        {match.status === "final" && match.score && outcome ? (
-          <div className="flex items-center gap-3">
-            <span className="headline text-2xl text-navy sm:text-3xl">
-              {match.score.us}–{match.score.them}
-            </span>
-            <ResultBadge outcome={outcome} />
-          </div>
-        ) : (
-          <span className="headline text-xl text-navy sm:text-2xl">
-            {formatMatchTime(match.date)}
-          </span>
-        )}
-      </div>
+      {/* Wraps to its own line under the name on mobile, own column from md up. */}
+      {game.location && (
+        <p className="order-last w-full truncate pl-16 text-sm text-muted md:order-none md:w-56 md:shrink-0 md:pl-0 lg:w-72">
+          {game.location}
+        </p>
+      )}
+
+      {played && result && (
+        <span className="headline shrink-0 text-base tabular-nums sm:text-lg">
+          {result}, {game.ourScore}&ndash;{game.theirScore}
+        </span>
+      )}
     </li>
   );
 }
