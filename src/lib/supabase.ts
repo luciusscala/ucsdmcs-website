@@ -26,7 +26,7 @@ const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 
 /** Storage buckets holding the images referenced by `*_path` columns. */
 const LOGO_BUCKET = process.env.SUPABASE_LOGO_BUCKET ?? "logos";
-const HEADSHOT_BUCKET = process.env.SUPABASE_HEADSHOT_BUCKET ?? "headshots";
+const HEADSHOT_BUCKET = process.env.SUPABASE_HEADSHOT_BUCKET ?? "player_pictures";
 
 /**
  * Server-side Supabase client.
@@ -51,6 +51,6 @@ function publicUrl(bucket: string, path: string | null): string | null {
 /** Resolves a `schools.logo_path`. */
 export const logoUrl = (path: string | null) => publicUrl(LOGO_BUCKET, path);
 
-/** Resolves a `players.headshot_path`. */
+/** Resolves a `players.picture_path`. */
 export const headshotUrl = (path: string | null) =>
   publicUrl(HEADSHOT_BUCKET, path);

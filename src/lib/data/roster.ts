@@ -1,14 +1,21 @@
+import { getSeasonFor } from "@/lib/data/season";
 import { headshotUrl, supabase } from "@/lib/supabase";
 
-/** Mirrors the `players` table. */
-type PlayerRow = {
-  id: string;
-  name: string;
+/**
+ * One `player_seasons` row with its `players` row embedded. Class, position
+ * and number live on the join because they change season to season; name,
+ * hometown and picture belong to the person.
+ */
+type PlayerSeasonRow = {
   class: string;
   position: string;
   number: number | null;
-  hometown: string | null;
-  headshot_path: string | null;
+  player: {
+    id: string;
+    name: string;
+    hometown: string | null;
+    picture_path: string | null;
+  } | null;
 };
 
 export type Player = {
@@ -23,63 +30,67 @@ export type Player = {
   headshot: string | null;
 };
 
-/**
- * Sections run back-to-front the way a lineup is read. Goalkeeper is listed
- * ahead of the current valid_position constraint, which omits it — any
- * position not named here still renders, in a trailing group.
- */
-const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+function toPlayer(row: PlayerSeasonRow): Player | null {
+  // A to-one embed comes back as an object, but supabase-js widens the type to
+  // an array in some inference paths.
+  const person = Array.isArray(row.player) ? row.player[0] : row.player;
+  if (!person) return null;
 
-function toPlayer(row: PlayerRow): Player {
   return {
-    id: row.id,
-    name: row.name,
+    id: person.id,
+    name: person.name,
     year: row.class,
     position: row.position,
     number: row.number,
-    hometown: row.hometown,
-    headshot: headshotUrl(row.headshot_path),
+    hometown: person.hometown,
+    headshot: headshotUrl(person.picture_path),
   };
 }
 
-/** Every player, by squad number with unnumbered players last, then by name. */
+/** The current season's squad, by number with unnumbered players last. */
 export async function getPlayers(): Promise<Player[]> {
   if (!supabase) return [];
 
+  const season = await getSeasonFor("player_seasons");
+  if (!season) return [];
+
   const { data, error } = await supabase
-    .from("players")
-    .select("id, name, class, position, number, hometown, headshot_path")
-    .order("number", { ascending: true, nullsFirst: false })
-    .order("name", { ascending: true });
+    .from("player_seasons")
+    .select("class, position, number, player:players(id, name, hometown, picture_path)")
+    .eq("season_id", season.id);
 
   if (error) throw new Error(`Failed to load players: ${error.message}`);
 
-  return (data as unknown as PlayerRow[]).map(toPlayer);
+  // Sorted here rather than in SQL: the tiebreaker is the player's name, which
+  // lives on the embedded table and can't order the parent rows in PostgREST.
+  return (data as unknown as PlayerSeasonRow[])
+    .map(toPlayer)
+    .filter((player): player is Player => player !== null)
+    .sort(
+      (a, b) =>
+        (a.number ?? Infinity) - (b.number ?? Infinity) ||
+        a.name.localeCompare(b.name),
+    );
 }
 
-/** Groups into position sections, keeping any unrecognised position visible. */
-export function groupByPosition(players: Player[]) {
-  const groups = new Map<string, Player[]>();
+/**
+ * Filter-tab order, back-to-front the way a lineup is read. Goalkeeper is
+ * listed ahead of the current valid_position constraint, which omits it.
+ */
+const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
-  for (const player of players) {
-    const group = groups.get(player.position);
-    if (group) group.push(player);
-    else groups.set(player.position, [player]);
-  }
-
+/**
+ * Positions actually present, in lineup order, with anything unrecognised
+ * appended. Deriving from the data means no dead tab with a count of zero.
+ */
+export function positionsIn(players: Player[]) {
+  const present = [...new Set(players.map((player) => player.position))];
   const rank = (position: string) => {
     const index = POSITION_ORDER.indexOf(position);
     return index === -1 ? POSITION_ORDER.length : index;
   };
-
-  return [...groups.entries()]
-    .map(([position, squad]) => ({ position, players: squad }))
-    .sort((a, b) => rank(a.position) - rank(b.position) || a.position.localeCompare(b.position));
+  return present.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
-
-/** Pluralised section heading: "Defenders", "Midfielders". */
-export const positionLabel = (position: string) =>
-  position.endsWith("s") ? position : `${position}s`;
 
 /** "AC" from "Ada Chen" — the headshot placeholder. */
 export const initialsOf = (name: string) =>

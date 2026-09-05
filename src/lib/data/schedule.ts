@@ -1,3 +1,4 @@
+import { getSeasonFor } from "@/lib/data/season";
 import { logoUrl, supabase } from "@/lib/supabase";
 
 /** Shape returned by the query below. Mirrors the `games` table plus the
@@ -49,13 +50,17 @@ function toGame(row: GameRow): Game {
   };
 }
 
-/** Every game, oldest first. Ordering is done by Postgres, not in JS. */
+/** The current season's games, oldest first. Postgres does the ordering. */
 export async function getGames(): Promise<Game[]> {
   if (!supabase) return [];
+
+  const season = await getSeasonFor("games");
+  if (!season) return [];
 
   const { data, error } = await supabase
     .from("games")
     .select(SELECT)
+    .eq("season_id", season.id)
     .order("game_date", { ascending: true });
 
   if (error) throw new Error(`Failed to load games: ${error.message}`);
@@ -75,6 +80,10 @@ export function outcome(game: Game): Outcome | null {
   if (game.ourScore < game.theirScore) return "L";
   return "D";
 }
+
+/** The soonest game without a result. Games arrive sorted, so this is a find. */
+export const nextGame = (games: Game[]) =>
+  games.find((game) => !hasResult(game)) ?? null;
 
 export function seasonRecord(games: Game[]) {
   const record = { w: 0, d: 0, l: 0, gf: 0, ga: 0, played: 0 };

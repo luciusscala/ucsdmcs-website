@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 
-import { PlayerCard } from "@/components/player-card";
-import {
-  type Player,
-  getPlayers,
-  groupByPosition,
-  positionLabel,
-} from "@/lib/data/roster";
+import { RosterGrid } from "@/components/roster-grid";
+import { type Player, getPlayers } from "@/lib/data/roster";
+import { getSeasonFor } from "@/lib/data/season";
 
 export const metadata: Metadata = {
   title: "Roster",
@@ -29,37 +25,29 @@ export default async function RosterPage() {
     failed = true;
   }
 
-  const groups = groupByPosition(players);
+  // Cached per render, so this reuses the lookup getPlayers already made.
+  const season = await getSeasonFor("player_seasons").catch(() => null);
 
   return (
     <div className="container-page py-12 sm:py-16">
-      <header>
-        <p className="text-sm font-medium text-blue">Men&rsquo;s Club Soccer</p>
+      <header className="mb-6">
+        <p className="text-sm font-medium text-yellow">
+          {season ? `${season.year} Season` : "Men\u2019s Club Soccer"}
+        </p>
         <h1 className="headline mt-1 text-4xl sm:text-5xl">Roster</h1>
         {players.length > 0 && (
-          <p className="mt-3 text-sm text-muted">{players.length} players</p>
+          <p className="mt-2 text-sm text-white/70">{players.length} players</p>
         )}
       </header>
 
       {failed ? (
-        <p className="py-16 text-muted">
+        <p className="py-10 text-white/70">
           The roster is unavailable right now. Please check back shortly.
         </p>
       ) : players.length === 0 ? (
-        <p className="py-16 text-muted">No players listed yet.</p>
+        <p className="py-10 text-white/70">No players listed yet.</p>
       ) : (
-        groups.map((group) => (
-          <section key={group.position} className="mt-12">
-            <h2 className="border-b border-border pb-2 text-sm font-semibold text-blue">
-              {positionLabel(group.position)}
-            </h2>
-            <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-              {group.players.map((player) => (
-                <PlayerCard key={player.id} player={player} />
-              ))}
-            </ul>
-          </section>
-        ))
+        <RosterGrid players={players} />
       )}
     </div>
   );

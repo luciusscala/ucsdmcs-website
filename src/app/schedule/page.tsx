@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { MatchRow } from "@/components/match-row";
+import { getSeasonFor } from "@/lib/data/season";
 import { type Game, getGames, seasonRecord } from "@/lib/data/schedule";
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ function RecordStrip({ games }: { games: Game[] }) {
   ];
 
   return (
-    <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-border sm:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border sm:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.label} className="bg-surface px-4 py-3">
           <dt className="text-sm text-muted">{stat.label}</dt>
@@ -49,29 +50,37 @@ export default async function SchedulePage() {
     failed = true;
   }
 
+  // Cached per render, so this reuses the lookup getGames already made.
+  const season = await getSeasonFor("games").catch(() => null);
+
   return (
     <div className="container-page py-12 sm:py-16">
-      <header>
-        <p className="text-sm font-medium text-blue">Men&rsquo;s Club Soccer</p>
+      <header className="mb-6">
+        <p className="text-sm font-medium text-yellow">
+          {season ? `${season.year} Season` : "Men\u2019s Club Soccer"}
+        </p>
         <h1 className="headline mt-1 text-4xl sm:text-5xl">
           Schedule &amp; Results
         </h1>
-        <RecordStrip games={games} />
       </header>
 
-      {failed ? (
-        <p className="py-16 text-muted">
-          The schedule is unavailable right now. Please check back shortly.
-        </p>
-      ) : games.length === 0 ? (
-        <p className="py-16 text-muted">No games on the schedule yet.</p>
-      ) : (
-        <ul className="mt-10 border-t border-border">
-          {games.map((game) => (
-            <MatchRow key={game.id} game={game} />
-          ))}
-        </ul>
-      )}
+      <div className="rounded-lg bg-background p-4 text-foreground sm:p-6">
+        <RecordStrip games={games} />
+
+        {failed ? (
+          <p className="py-10 text-muted">
+            The schedule is unavailable right now. Please check back shortly.
+          </p>
+        ) : games.length === 0 ? (
+          <p className="py-10 text-muted">No games on the schedule yet.</p>
+        ) : (
+          <ul className="mt-6 border-t border-border first:mt-0">
+            {games.map((game) => (
+              <MatchRow key={game.id} game={game} />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

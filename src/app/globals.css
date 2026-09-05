@@ -35,9 +35,11 @@
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* The page ground is navy; white cards restore the light palette locally,
+   which is why the tokens above stay light rather than being inverted. */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--navy);
+  color: #ffffff;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
