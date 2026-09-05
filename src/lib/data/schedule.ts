@@ -50,11 +50,16 @@ function toGame(row: GameRow): Game {
   };
 }
 
-/** The current season's games, oldest first. Postgres does the ordering. */
-export async function getGames(): Promise<Game[]> {
+/**
+ * A season's games, oldest first. Postgres does the ordering. Without an
+ * explicit id this falls back to whichever season the schedule defaults to.
+ */
+export async function getGames(seasonId?: string): Promise<Game[]> {
   if (!supabase) return [];
 
-  const season = await getSeasonFor("games");
+  const season = seasonId
+    ? { id: seasonId }
+    : await getSeasonFor("games");
   if (!season) return [];
 
   const { data, error } = await supabase
@@ -85,19 +90,83 @@ export function outcome(game: Game): Outcome | null {
 export const nextGame = (games: Game[]) =>
   games.find((game) => !hasResult(game)) ?? null;
 
+type Tally = { w: number; d: number; l: number };
+
+const tally = (): Tally => ({ w: 0, d: 0, l: 0 });
+
+const add = (into: Tally, result: Outcome) => {
+  if (result === "W") into.w += 1;
+  else if (result === "D") into.d += 1;
+  else into.l += 1;
+};
+
+/** "2-1-0", the order college athletics writes it: wins, losses, draws. */
+export const formatTally = (t: Tally) => `${t.w}-${t.l}-${t.d}`;
+
+/**
+ * Win percentage the way college athletics computes it: a draw counts as half
+ * a win. Returns null before a game is played, so the panel shows "—" rather
+ * than a misleading .000.
+ */
+export function winPct(t: Tally) {
+  const played = t.w + t.d + t.l;
+  if (played === 0) return null;
+  return (t.w + t.d / 2) / played;
+}
+
+/** ".667" — leading zero dropped, as scoreboards write it. */
+export const formatPct = (pct: number | null) =>
+  pct === null ? "—" : pct.toFixed(3).replace(/^0/, "");
+
+/**
+ * Current run of the same result, most recent game first: "W3", "L1", "—".
+ * Games arrive oldest-first, so this walks backwards.
+ */
+export function currentStreak(games: Game[]) {
+  let streak: Outcome | null = null;
+  let count = 0;
+
+  for (let i = games.length - 1; i >= 0; i -= 1) {
+    const result = outcome(games[i]);
+    if (!result) continue;
+    if (streak === null) {
+      streak = result;
+      count = 1;
+    } else if (result === streak) {
+      count += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak ? `${streak}${count}` : "—";
+}
+
 export function seasonRecord(games: Game[]) {
-  const record = { w: 0, d: 0, l: 0, gf: 0, ga: 0, played: 0 };
+  const overall = tally();
+  const home = tally();
+  const away = tally();
+  let gf = 0;
+  let ga = 0;
 
   for (const game of games) {
     if (!hasResult(game)) continue;
-    record.played += 1;
-    record.gf += game.ourScore;
-    record.ga += game.theirScore;
+    gf += game.ourScore;
+    ga += game.theirScore;
+
     const result = outcome(game);
-    if (result === "W") record.w += 1;
-    else if (result === "D") record.d += 1;
-    else if (result === "L") record.l += 1;
+    if (!result) continue;
+    add(overall, result);
+    add(game.isHome ? home : away, result);
   }
 
-  return record;
+  return {
+    overall,
+    home,
+    away,
+    gf,
+    ga,
+    played: overall.w + overall.d + overall.l,
+    pct: winPct(overall),
+  };
 }

@@ -1,7 +1,12 @@
 import Link from "next/link";
 
 import { getPlayers } from "@/lib/data/roster";
-import { getGames, nextGame, seasonRecord } from "@/lib/data/schedule";
+import {
+  formatTally,
+  getGames,
+  nextGame,
+  seasonRecord,
+} from "@/lib/data/schedule";
 import { formatGameDate, formatTime } from "@/lib/format";
 
 /** Serve a static page, refreshed at most every five minutes. */
@@ -52,8 +57,8 @@ export default async function Home() {
         </h1>
         {record.played > 0 && (
           <p className="mt-3 text-sm text-yellow">
-            {record.w}&ndash;{record.d}&ndash;{record.l} through{" "}
-            {record.played} {record.played === 1 ? "game" : "games"}
+            {formatTally(record.overall)} through {record.played}{" "}
+            {record.played === 1 ? "game" : "games"}
           </p>
         )}
       </section>

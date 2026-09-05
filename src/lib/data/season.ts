@@ -24,6 +24,25 @@ type SeasonRow = Season & { is_current: boolean };
  * Whatever this returns is what the page heading names, so a section showing
  * last season always says so.
  */
+/** Every season, newest first — the options in the schedule's year picker. */
+export const listSeasons = cache(async (): Promise<Season[]> => {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id, year")
+    .order("year", { ascending: false });
+
+  if (error) throw new Error(`Failed to load seasons: ${error.message}`);
+  return (data ?? []) as Season[];
+});
+
+/** Resolves a `?season=` year to a real season, or null when it matches none. */
+export const getSeasonByYear = cache(async (year: number) => {
+  const seasons = await listSeasons();
+  return seasons.find((season) => season.year === year) ?? null;
+});
+
 export const getSeasonFor = cache(
   async (table: SeasonScopedTable): Promise<Season | null> => {
     if (!supabase) return null;

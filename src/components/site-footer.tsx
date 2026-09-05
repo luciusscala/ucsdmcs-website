@@ -1,8 +1,11 @@
 import Link from "next/link";
 
 const NAV = [
-  { href: "/schedule", label: "Schedule" },
+  { href: "/schedule", label: "Schedule & Scores" },
+  { href: "/standings", label: "Standings" },
   { href: "/roster", label: "Roster" },
+  { href: "/tryouts", label: "Tryouts" },
+  { href: "/donate", label: "Donate" },
 ];
 
 export function SiteFooter() {
@@ -18,7 +21,7 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <nav className="flex gap-5 text-sm text-white/70 sm:ml-auto">
+        <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/70 sm:ml-auto">
           {NAV.map((item) => (
             <Link
               key={item.href}

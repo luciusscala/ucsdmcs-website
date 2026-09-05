@@ -47,11 +47,16 @@ function toPlayer(row: PlayerSeasonRow): Player | null {
   };
 }
 
-/** The current season's squad, by number with unnumbered players last. */
-export async function getPlayers(): Promise<Player[]> {
+/**
+ * A season's squad, by number with unnumbered players last. Without an
+ * explicit id this falls back to whichever season the roster defaults to.
+ */
+export async function getPlayers(seasonId?: string): Promise<Player[]> {
   if (!supabase) return [];
 
-  const season = await getSeasonFor("player_seasons");
+  const season = seasonId
+    ? { id: seasonId }
+    : await getSeasonFor("player_seasons");
   if (!season) return [];
 
   const { data, error } = await supabase

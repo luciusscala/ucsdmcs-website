@@ -9,7 +9,7 @@ export function MatchRow({ game }: { game: Game }) {
   const played = hasResult(game);
 
   return (
-    <li className="-mx-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 even:bg-surface">
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-1 border border-border bg-surface px-4 py-4">
       {/* Fixed box whether or not a crest exists, so names stay on one edge. */}
       <div className="flex size-12 shrink-0 items-center justify-center">
         {game.opponentLogo ? (
@@ -23,7 +23,7 @@ export function MatchRow({ game }: { game: Game }) {
           />
         ) : (
           /* A school with no crest gets a monogram, never an empty gap. */
-          <span className="flex size-10 items-center justify-center rounded-full border border-border-strong text-xs font-semibold text-muted">
+          <span className="flex size-10 items-center justify-center border border-border-strong text-xs font-semibold text-muted">
             {initialsOf(game.opponent)}
           </span>
         )}
@@ -37,7 +37,7 @@ export function MatchRow({ game }: { game: Game }) {
           )}
         </p>
         <p className="mt-0.5 flex items-center gap-2">
-          <span className="shrink-0 rounded-sm bg-navy px-1.5 py-0.5 text-xs font-bold uppercase text-yellow">
+          <span className="shrink-0 bg-navy px-1.5 py-0.5 text-xs font-bold uppercase text-yellow">
             {game.isHome ? "vs" : "at"}
           </span>
           <span className="headline truncate text-lg sm:text-xl">

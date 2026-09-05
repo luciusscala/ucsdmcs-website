@@ -1,71 +1,97 @@
 import type { Metadata } from "next";
 
 import { MatchRow } from "@/components/match-row";
-import { getSeasonFor } from "@/lib/data/season";
-import { type Game, getGames, seasonRecord } from "@/lib/data/schedule";
+import { SeasonPicker } from "@/components/season-picker";
+import {
+  type Game,
+  currentStreak,
+  formatPct,
+  formatTally,
+  getGames,
+  seasonRecord,
+} from "@/lib/data/schedule";
+import {
+  getSeasonByYear,
+  getSeasonFor,
+  listSeasons,
+} from "@/lib/data/season";
 
 export const metadata: Metadata = {
-  title: "Schedule & Results",
+  title: "Schedule & Scores",
   description:
     "Every fixture and result for UC San Diego men's club soccer, in chronological order.",
 };
 
-/** Serve a static page, refreshed at most every five minutes. */
-export const revalidate = 300;
-
-function RecordStrip({ games }: { games: Game[] }) {
+function RecordPanel({ games }: { games: Game[] }) {
   const record = seasonRecord(games);
-  if (record.played === 0) return null;
 
   const stats = [
-    { label: "Record", value: `${record.w}–${record.d}–${record.l}` },
-    { label: "Played", value: String(record.played) },
+    { label: "Overall", value: formatTally(record.overall) },
+    { label: "Pct", value: formatPct(record.pct) },
+    { label: "Streak", value: currentStreak(games) },
+    { label: "Home", value: formatTally(record.home) },
+    { label: "Away", value: formatTally(record.away) },
     { label: "Goals For", value: String(record.gf) },
     { label: "Goals Against", value: String(record.ga) },
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border sm:grid-cols-4">
+    // gap-px over a tinted ground draws the hairlines, which survives the grid
+    // wrapping at every breakpoint where real borders would double up.
+    <dl className="mt-4 grid grid-cols-2 gap-px bg-border sm:grid-cols-4 lg:grid-cols-7">
       {stats.map((stat) => (
-        <div key={stat.label} className="bg-surface px-4 py-3">
-          <dt className="text-sm text-muted">{stat.label}</dt>
-          <dd className="headline mt-0.5 text-2xl tabular-nums">{stat.value}</dd>
+        <div key={stat.label} className="bg-background px-3 py-3 text-center">
+          <dt className="text-xs text-muted">{stat.label}</dt>
+          <dd className="headline mt-1 text-2xl tabular-nums">{stat.value}</dd>
         </div>
       ))}
     </dl>
   );
 }
 
-export default async function SchedulePage() {
-  // A Supabase outage or a missing RLS policy shouldn't fail the whole build,
-  // so failure degrades to an error state on this page. It stays distinct from
-  // the empty state below — "unavailable" must never read as "no games yet".
+export default async function SchedulePage(props: PageProps<"/schedule">) {
+  const params = await props.searchParams;
+  const requested = Number(
+    Array.isArray(params.season) ? params.season[0] : params.season,
+  );
+
+  const seasons = await listSeasons();
+  const season =
+    (Number.isInteger(requested) ? await getSeasonByYear(requested) : null) ??
+    (await getSeasonFor("games"));
+
+  // A Supabase outage degrades to an error state rather than failing the
+  // build. "Unavailable" stays distinct from "no games scheduled".
   let games: Game[] = [];
   let failed = false;
 
   try {
-    games = await getGames();
+    games = season ? await getGames(season.id) : [];
   } catch (error) {
     console.error(error);
     failed = true;
   }
 
-  // Cached per render, so this reuses the lookup getGames already made.
-  const season = await getSeasonFor("games").catch(() => null);
-
   return (
-    <div className="container-page py-12 sm:py-16">
-      <header className="mb-6">
-        <p className="text-sm font-medium text-yellow">
-          {season ? `${season.year} Season` : "Men\u2019s Club Soccer"}
-        </p>
-        <h1 className="headline mt-1 text-4xl sm:text-5xl">
-          Schedule &amp; Results
+    <div className="container-page py-8 sm:py-10">
+      <div className="rounded-xl bg-background p-4 text-foreground sm:p-6">
+        <h1 className="headline text-xl sm:text-2xl">
+          {season ? `${season.year} ` : ""}Men&rsquo;s Club Soccer Schedule
+          &amp; Scores
         </h1>
-      </header>
 
-      <div className="rounded-lg bg-background p-4 text-foreground sm:p-6">
-        <RecordStrip games={games} />
+        <div className="mt-4 flex flex-wrap items-center gap-3 bg-surface px-4 py-3">
+          <a
+            href="/schedule/calendar"
+            className="bg-navy px-3 py-1.5 text-sm font-semibold text-yellow transition hover:opacity-90"
+          >
+            Add to calendar
+          </a>
+
+          <SeasonPicker seasons={seasons} selected={season} />
+        </div>
+
+        <RecordPanel games={games} />
 
         {failed ? (
           <p className="py-10 text-muted">
@@ -74,7 +100,7 @@ export default async function SchedulePage() {
         ) : games.length === 0 ? (
           <p className="py-10 text-muted">No games on the schedule yet.</p>
         ) : (
-          <ul className="mt-6 border-t border-border first:mt-0">
+          <ul className="mt-4 space-y-2">
             {games.map((game) => (
               <MatchRow key={game.id} game={game} />
             ))}

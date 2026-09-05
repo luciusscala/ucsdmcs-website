@@ -66,7 +66,7 @@ export function RosterGrid({ players }: { players: Player[] }) {
 
   return (
     <>
-      <div className="flex items-end gap-4 border-b border-white/15">
+      <div className="mt-4 flex items-end gap-4 border-b border-border">
         <div className="flex flex-1 gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const selected = tab.label === active;
@@ -78,14 +78,14 @@ export function RosterGrid({ players }: { players: Player[] }) {
                 aria-pressed={selected}
                 className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition ${
                   selected
-                    ? "border-yellow text-yellow"
-                    : "border-transparent text-white/60 hover:text-white"
+                    ? "border-blue text-blue"
+                    : "border-transparent text-muted hover:text-foreground"
                 }`}
               >
                 {tab.label}
                 <span
                   className={`ml-2 text-xs tabular-nums ${
-                    selected ? "text-yellow/70" : "text-white/35"
+                    selected ? "text-blue/70" : "text-muted/60"
                   }`}
                 >
                   {tab.count}
@@ -102,10 +102,10 @@ export function RosterGrid({ players }: { players: Player[] }) {
               type="button"
               onClick={() => writeView(option)}
               aria-pressed={view === option}
-              className={`rounded px-2.5 py-1 text-xs font-medium capitalize transition ${
+              className={`px-2.5 py-1 text-xs font-medium capitalize transition ${
                 view === option
-                  ? "bg-white/15 text-white"
-                  : "text-white/50 hover:text-white"
+                  ? "bg-navy text-yellow"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               {option}
@@ -121,7 +121,7 @@ export function RosterGrid({ players }: { players: Player[] }) {
           ))}
         </ul>
       ) : (
-        <ul className="mt-6 border-t border-white/10">
+        <ul className="mt-4 space-y-2">
           {filtered.map((player) => (
             <PlayerRow key={player.id} player={player} />
           ))}

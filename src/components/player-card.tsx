@@ -5,7 +5,7 @@ import { initialsOf } from "@/lib/text";
 
 export function PlayerCard({ player }: { player: Player }) {
   return (
-    <li className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-navy">
+    <li className="group relative aspect-[3/4] overflow-hidden bg-navy">
       {player.headshot ? (
         <Image
           src={player.headshot}
@@ -18,7 +18,7 @@ export function PlayerCard({ player }: { player: Player }) {
       ) : (
         /* Flat ground, no gradient: initials sit where a face would be. */
         <div className="absolute inset-x-0 top-0 flex h-2/3 items-center justify-center">
-          <span className="flex size-16 items-center justify-center rounded-full border border-white/25 text-lg font-semibold text-white/70">
+          <span className="flex size-16 items-center justify-center border border-white/25 text-lg font-semibold text-white/70">
             {initialsOf(player.name)}
           </span>
         </div>

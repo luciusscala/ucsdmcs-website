@@ -2,8 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 const NAV = [
-  { href: "/schedule", label: "Schedule" },
+  { href: "/schedule", label: "Schedule & Scores" },
+  { href: "/standings", label: "Standings" },
   { href: "/roster", label: "Roster" },
+  { href: "/tryouts", label: "Tryouts" },
+  { href: "/donate", label: "Donate" },
 ];
 
 export function SiteHeader() {
@@ -15,7 +18,7 @@ export function SiteHeader() {
       <div className="h-6 bg-navy" />
 
       <div className="bg-yellow">
-        <div className="container-page flex h-14 items-center gap-5">
+        <div className="container-page flex min-h-14 flex-wrap items-center gap-x-6 gap-y-1 py-2">
           {/* 88px crest in a 56px bar: -my-4 lets it break out top and bottom. */}
           <Link href="/" className="-my-4 shrink-0" aria-label="Home">
             <Image
@@ -28,7 +31,7 @@ export function SiteHeader() {
             />
           </Link>
 
-          <nav className="flex items-center gap-6 text-sm font-semibold text-navy">
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-semibold text-navy">
             {NAV.map((item) => (
               <Link
                 key={item.href}
