@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { getPlayers } from "@/lib/data/roster";
@@ -48,22 +47,11 @@ export default async function Home() {
   return (
     <div className="container-page py-14 sm:py-20">
       <section className="flex flex-col items-center text-center">
-        <Image
-          src="/logos/ucsdtridentlogo.png"
-          alt=""
-          width={112}
-          height={112}
-          className="size-24 sm:size-28"
-          priority
-        />
-        <h1 className="headline mt-6 text-4xl sm:text-5xl">
+        <h1 className="headline text-4xl sm:text-5xl">
           UC San Diego Men&rsquo;s Club Soccer
         </h1>
-        <p className="mt-3 max-w-xl text-white/70">
-          Fixtures, results and the squad for the Tritons&rsquo; club season.
-        </p>
         {record.played > 0 && (
-          <p className="mt-5 text-sm text-yellow">
+          <p className="mt-3 text-sm text-yellow">
             {record.w}&ndash;{record.d}&ndash;{record.l} through{" "}
             {record.played} {record.played === 1 ? "game" : "games"}
           </p>

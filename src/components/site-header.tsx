@@ -11,16 +11,8 @@ export function SiteHeader() {
     /* Raised so the crest, which is taller than the gold bar, can overhang
        onto the navy above and below without being clipped by page content. */
     <header className="relative z-20">
-      <div className="bg-navy">
-        <div className="container-page flex h-10 items-center">
-          <Link href="/" className="headline truncate text-sm text-white">
-            UC San Diego Men&rsquo;s Club Soccer
-          </Link>
-          <span className="ml-auto hidden shrink-0 text-xs text-white/60 sm:block">
-            La Jolla, California
-          </span>
-        </div>
-      </div>
+      {/* Navy rule above the gold bar; the crest overhangs onto it. */}
+      <div className="h-6 bg-navy" />
 
       <div className="bg-yellow">
         <div className="container-page flex h-14 items-center gap-5">

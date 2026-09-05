@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { type Game, hasResult, outcome } from "@/lib/data/schedule";
 import { formatGameDate, formatTime } from "@/lib/format";
+import { initialsOf } from "@/lib/text";
 
 export function MatchRow({ game }: { game: Game }) {
   const result = outcome(game);
@@ -11,7 +12,7 @@ export function MatchRow({ game }: { game: Game }) {
     <li className="-mx-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 even:bg-surface">
       {/* Fixed box whether or not a crest exists, so names stay on one edge. */}
       <div className="flex size-12 shrink-0 items-center justify-center">
-        {game.opponentLogo && (
+        {game.opponentLogo ? (
           <Image
             src={game.opponentLogo}
             // Decorative: the school name sits immediately beside it.
@@ -20,6 +21,11 @@ export function MatchRow({ game }: { game: Game }) {
             height={48}
             className="size-12 object-contain"
           />
+        ) : (
+          /* A school with no crest gets a monogram, never an empty gap. */
+          <span className="flex size-10 items-center justify-center rounded-full border border-border-strong text-xs font-semibold text-muted">
+            {initialsOf(game.opponent)}
+          </span>
         )}
       </div>
 
@@ -47,11 +53,17 @@ export function MatchRow({ game }: { game: Game }) {
         </p>
       )}
 
-      {played && result && (
-        <span className="headline shrink-0 text-base tabular-nums sm:text-lg">
-          {result}, {game.ourScore}&ndash;{game.theirScore}
-        </span>
-      )}
+      {/* Never blank: a played game shows its score, an upcoming one says so,
+          so "not played yet" can't be mistaken for missing data. */}
+      <span className="shrink-0 text-sm">
+        {played && result ? (
+          <span className="headline text-base tabular-nums sm:text-lg">
+            {result}, {game.ourScore}&ndash;{game.theirScore}
+          </span>
+        ) : (
+          <span className="text-muted">Upcoming</span>
+        )}
+      </span>
     </li>
   );
 }

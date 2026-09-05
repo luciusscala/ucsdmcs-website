@@ -92,11 +92,3 @@ export function positionsIn(players: Player[]) {
   return present.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
-/** "AC" from "Ada Chen" — the headshot placeholder. */
-export const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");

@@ -72,6 +72,27 @@ body {
   line-height: 1.15;
 }
 
+/* Form control. One radius, one border, one padding step, reused everywhere
+   an admin field appears. */
+@utility field {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--foreground);
+}
+
+@utility field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
 /* Aligns a full-bleed split section's text with the page container gutter */
 @utility pad-gutter-l {
   padding-left: max(1.25rem, calc((100vw - 76rem) / 2));
