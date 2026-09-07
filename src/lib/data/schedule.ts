@@ -34,15 +34,16 @@ export type Game = {
 export type Outcome = "W" | "L" | "D";
 
 /**
- * A map link for a game's address. Google's universal search URL needs no
- * API key, and iOS and Android both hand it off to the installed maps app.
+ * Turn-by-turn directions to a game's address. Google's universal URL form
+ * needs no API key and is handled by the Google Maps app on both iOS and
+ * Android, falling back to the web map anywhere else.
  *
  * Keyed off `address`, not `location`: a label like "Los Angeles, CA" is
- * worth printing but not worth dropping someone onto a map for.
+ * worth printing but not worth routing someone to.
  */
-export const mapsUrl = (game: Game) =>
+export const directionsUrl = (game: Game) =>
   game.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
         game.address,
       )}`
     : null;

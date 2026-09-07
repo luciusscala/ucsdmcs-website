@@ -9,6 +9,7 @@ import {
   requireAdmin,
   startSession,
 } from "@/lib/admin-auth";
+import { fromDateTimeLocal } from "@/lib/format";
 import { requireAdminClient } from "@/lib/supabase-admin";
 
 export type ActionState = { error?: string } | null;
@@ -91,12 +92,15 @@ export async function createGame(_state: ActionState, data: FormData) {
     return { error: "Season, opponent and date are required." };
   }
 
+  const kickoff = fromDateTimeLocal(gameDate);
+  if (!kickoff) return { error: "Date is not a valid date and time." };
+
   const { error } = await requireAdminClient()
     .from("games")
     .insert({
       season_id: seasonId,
       opponent_id: opponentId,
-      game_date: new Date(gameDate).toISOString(),
+      game_date: kickoff,
       is_home: data.get("is_home") === "on",
       location: text(data, "location"),
       address: text(data, "address"),
@@ -111,22 +115,47 @@ export async function createGame(_state: ActionState, data: FormData) {
   return null;
 }
 
-/** Scores plus venue, so an address can be filled in after the game is created. */
+/** Every field on a fixture, so a game can be corrected after it is created. */
 export async function updateGame(_state: ActionState, data: FormData) {
   await requireAdmin();
 
   const id = text(data, "id");
-  if (!id) return { error: "Missing game." };
+  const opponentId = text(data, "opponent_id");
+  const gameDate = text(data, "game_date");
+  if (!id || !opponentId || !gameDate) {
+    return { error: "Opponent and date are required." };
+  }
+
+  const kickoff = fromDateTimeLocal(gameDate);
+  if (!kickoff) return { error: "Date is not a valid date and time." };
 
   const { error } = await requireAdminClient()
     .from("games")
     .update({
+      opponent_id: opponentId,
+      game_date: kickoff,
+      is_home: data.get("is_home") === "on",
       location: text(data, "location"),
       address: text(data, "address"),
       our_score: int(data, "our_score"),
       their_score: int(data, "their_score"),
     })
     .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePublic();
+  revalidatePath("/admin/schedule");
+  return null;
+}
+
+export async function deleteGame(_state: ActionState, data: FormData) {
+  await requireAdmin();
+
+  const id = text(data, "id");
+  if (!id) return { error: "Missing game." };
+
+  const { error } = await requireAdminClient().from("games").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -210,6 +239,51 @@ export async function updatePlayer(_state: ActionState, data: FormData) {
     .eq("id", entryId);
 
   if (seasonError) return { error: seasonError.message };
+
+  revalidatePublic();
+  revalidatePath("/admin/roster");
+  return null;
+}
+
+/**
+ * Removes a player from this season's squad.
+ *
+ * The `player_seasons` entry always goes. The `players` row only follows when
+ * no other season still references that person, so deleting a graduate from
+ * 2026 can't erase them from the 2025 roster. Deleting the season entry first
+ * also keeps the foreign key satisfied at every step.
+ */
+export async function deletePlayer(_state: ActionState, data: FormData) {
+  await requireAdmin();
+  const client = requireAdminClient();
+
+  const playerId = text(data, "player_id");
+  const entryId = text(data, "entry_id");
+  if (!playerId || !entryId) return { error: "Missing player." };
+
+  const { error: entryError } = await client
+    .from("player_seasons")
+    .delete()
+    .eq("id", entryId);
+
+  if (entryError) return { error: entryError.message };
+
+  const { data: remaining, error: lookupError } = await client
+    .from("player_seasons")
+    .select("id")
+    .eq("player_id", playerId)
+    .limit(1);
+
+  if (lookupError) return { error: lookupError.message };
+
+  if ((remaining ?? []).length === 0) {
+    const { error: playerError } = await client
+      .from("players")
+      .delete()
+      .eq("id", playerId);
+
+    if (playerError) return { error: playerError.message };
+  }
 
   revalidatePublic();
   revalidatePath("/admin/roster");

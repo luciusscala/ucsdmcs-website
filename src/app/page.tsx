@@ -86,7 +86,7 @@ export default async function Home() {
             </div>
             <MatchLocation
               game={next}
-              className="w-full truncate text-sm text-muted md:w-auto md:max-w-xs"
+              className="w-full text-sm text-muted md:w-auto md:max-w-xs"
             />
           </div>
         </section>

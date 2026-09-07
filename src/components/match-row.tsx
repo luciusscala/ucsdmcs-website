@@ -50,7 +50,7 @@ export function MatchRow({ game }: { game: Game }) {
       {/* Wraps to its own line under the name on mobile, own column from md up. */}
       <MatchLocation
         game={game}
-        className="order-last w-full truncate pl-16 text-sm text-muted md:order-none md:w-56 md:shrink-0 md:pl-0 lg:w-72"
+        className="order-last w-full pl-16 text-sm text-muted md:order-none md:w-56 md:shrink-0 md:pl-0 lg:w-72"
       />
 
       {/* Never blank: a played game shows its score, an upcoming one says so,

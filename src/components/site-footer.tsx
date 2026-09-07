@@ -1,12 +1,6 @@
 import Link from "next/link";
 
-const NAV = [
-  { href: "/schedule", label: "Schedule & Scores" },
-  { href: "/standings", label: "Standings" },
-  { href: "/roster", label: "Roster" },
-  { href: "/tryouts", label: "Tryouts" },
-  { href: "/donate", label: "Donate" },
-];
+import { NAV } from "@/lib/nav";
 
 export function SiteFooter() {
   return (
@@ -22,15 +16,27 @@ export function SiteFooter() {
         </div>
 
         <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/70 sm:ml-auto">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="transition hover:text-white"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) =>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:text-white"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="transition hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
       </div>
     </footer>

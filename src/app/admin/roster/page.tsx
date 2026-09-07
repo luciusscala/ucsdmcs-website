@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 
-import { createPlayer, updatePlayer } from "@/app/admin/actions";
+import { createPlayer, deletePlayer, updatePlayer } from "@/app/admin/actions";
+import { SeasonPicker } from "@/components/season-picker";
 import { AdminForm } from "@/components/admin/admin-form";
 import { SetupNotice } from "@/components/admin/setup-notice";
 import { requireAdmin } from "@/lib/admin-auth";
-import { listRoster, listSeasons } from "@/lib/data/admin";
+import { adminSeason, listRoster } from "@/lib/data/admin";
 import { isAdminConfigured } from "@/lib/supabase-admin";
 
 export const metadata: Metadata = { title: "Admin · Roster" };
 
-const CLASSES = ["Freshman", "Sophomore", "Junior", "Senior"];
+const CLASSES = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate"];
 const POSITIONS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
 function Select({
@@ -37,12 +38,14 @@ function Select({
   );
 }
 
-export default async function AdminRosterPage() {
+export default async function AdminRosterPage(
+  props: PageProps<"/admin/roster">,
+) {
   await requireAdmin();
   if (!isAdminConfigured()) return <SetupNotice />;
 
-  const seasons = await listSeasons();
-  const season = seasons.find((s) => s.is_current) ?? seasons[0];
+  const params = await props.searchParams;
+  const { seasons, season } = await adminSeason("player_seasons", params.season);
   const roster = season ? await listRoster(season.id) : [];
 
   if (!season) {
@@ -55,7 +58,10 @@ export default async function AdminRosterPage() {
 
   return (
     <div className="container-page py-12">
-      <h1 className="headline text-3xl">Roster · {season.year}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="headline text-3xl">Roster · {season.year}</h1>
+        <SeasonPicker seasons={seasons} selected={season} />
+      </div>
 
       <section className="mt-6 rounded-lg bg-background p-5 text-foreground">
         <h2 className="headline text-lg">Add player</h2>
@@ -131,6 +137,20 @@ export default async function AdminRosterPage() {
                 <input name="picture" type="file" accept="image/*" className="field" />
               </div>
             </AdminForm>
+
+            {/* Its own form: a nested one is invalid HTML, and the confirm
+                keeps a stray click from dropping a player. */}
+            <div className="mt-3 flex justify-end border-t border-border pt-3">
+              <AdminForm
+                action={deletePlayer}
+                submitLabel="Remove from roster"
+                destructive
+                confirm={`Remove ${entry.name} from the ${season.year} roster? This cannot be undone.`}
+              >
+                <input type="hidden" name="player_id" value={entry.playerId} />
+                <input type="hidden" name="entry_id" value={entry.entryId} />
+              </AdminForm>
+            </div>
           </div>
         ))}
       </section>

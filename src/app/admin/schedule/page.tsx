@@ -1,21 +1,27 @@
 import type { Metadata } from "next";
 
-import { createGame, updateGame } from "@/app/admin/actions";
+import { createGame, deleteGame, updateGame } from "@/app/admin/actions";
 import { AdminForm } from "@/components/admin/admin-form";
+import { SeasonPicker } from "@/components/season-picker";
 import { SetupNotice } from "@/components/admin/setup-notice";
 import { requireAdmin } from "@/lib/admin-auth";
-import { listGames, listSchools, listSeasons } from "@/lib/data/admin";
+import { adminSeason, listGames, listSchools } from "@/lib/data/admin";
 import { isAdminConfigured } from "@/lib/supabase-admin";
-import { formatGameDate, formatTime } from "@/lib/format";
+import { formatGameDate, formatTime, toDateTimeLocal } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Admin · Schedule" };
 
-export default async function AdminSchedulePage() {
+export default async function AdminSchedulePage(
+  props: PageProps<"/admin/schedule">,
+) {
   await requireAdmin();
   if (!isAdminConfigured()) return <SetupNotice />;
 
-  const [seasons, schools] = await Promise.all([listSeasons(), listSchools()]);
-  const season = seasons.find((s) => s.is_current) ?? seasons[0];
+  const params = await props.searchParams;
+  const [{ seasons, season }, schools] = await Promise.all([
+    adminSeason("games", params.season),
+    listSchools(),
+  ]);
   const games = season ? await listGames(season.id) : [];
 
   if (!season) {
@@ -28,7 +34,10 @@ export default async function AdminSchedulePage() {
 
   return (
     <div className="container-page py-12">
-      <h1 className="headline text-3xl">Schedule · {season.year}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="headline text-3xl">Schedule · {season.year}</h1>
+        <SeasonPicker seasons={seasons} selected={season} />
+      </div>
 
       <section className="mt-6 rounded-lg bg-background p-5 text-foreground">
         <h2 className="headline text-lg">Add game</h2>
@@ -96,12 +105,29 @@ export default async function AdminSchedulePage() {
               {game.isHome ? "vs" : "at"} {game.opponent}
             </p>
 
-            {/* Score entry is the weekly job, so it's inline on every row —
-                and venue rides along, to backfill games added before the
-                address column existed. */}
+            {/* Every field is editable inline: scores are the weekly job, but
+                a misdated or misassigned fixture has to be fixable too. */}
             <AdminForm action={updateGame} submitLabel="Save" className="mt-3">
               <input type="hidden" name="id" value={game.id} />
-              <div className="grid gap-3 sm:grid-cols-2">
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="field-label">Date &amp; time</label>
+                  <input name="game_date" type="datetime-local" required defaultValue={toDateTimeLocal(game.gameDate)} className="field" />
+                </div>
+                <div>
+                  <label className="field-label">Opponent</label>
+                  <select name="opponent_id" required defaultValue={game.opponentId ?? ""} className="field">
+                    <option value="" disabled>Choose…</option>
+                    {schools.map((school) => (
+                      <option key={school.id} value={school.id}>{school.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                  <input name="is_home" type="checkbox" defaultChecked={game.isHome} className="size-4" />
+                  Home game
+                </label>
                 <div>
                   <label className="field-label">Location</label>
                   <input name="location" defaultValue={game.location ?? ""} className="field" />
@@ -110,18 +136,31 @@ export default async function AdminSchedulePage() {
                   <label className="field-label">Address</label>
                   <input name="address" defaultValue={game.address ?? ""} className="field" placeholder="9500 Gilman Dr, La Jolla, CA 92093" />
                 </div>
-              </div>
-              <div className="mt-3 flex items-end gap-3">
-                <div className="w-24">
-                  <label className="field-label">Ours</label>
-                  <input name="our_score" type="number" min="0" defaultValue={game.ourScore ?? ""} className="field" />
-                </div>
-                <div className="w-24">
-                  <label className="field-label">Theirs</label>
-                  <input name="their_score" type="number" min="0" defaultValue={game.theirScore ?? ""} className="field" />
+                <div className="flex items-end gap-3">
+                  <div className="w-full">
+                    <label className="field-label">Ours</label>
+                    <input name="our_score" type="number" min="0" defaultValue={game.ourScore ?? ""} className="field" />
+                  </div>
+                  <div className="w-full">
+                    <label className="field-label">Theirs</label>
+                    <input name="their_score" type="number" min="0" defaultValue={game.theirScore ?? ""} className="field" />
+                  </div>
                 </div>
               </div>
             </AdminForm>
+
+            {/* Its own form: a nested one is invalid HTML, and the confirm
+                keeps a stray click from dropping a fixture. */}
+            <div className="mt-3 flex justify-end border-t border-border pt-3">
+              <AdminForm
+                action={deleteGame}
+                submitLabel="Delete game"
+                destructive
+                confirm={`Delete ${game.isHome ? "vs" : "at"} ${game.opponent}? This cannot be undone.`}
+              >
+                <input type="hidden" name="id" value={game.id} />
+              </AdminForm>
+            </div>
           </div>
         ))}
       </section>
