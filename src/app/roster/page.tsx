@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { RosterGrid } from "@/components/roster-grid";
+import { RosterTable } from "@/components/roster-table";
 import { SeasonPicker } from "@/components/season-picker";
 import { type Player, getPlayers } from "@/lib/data/roster";
 import { getSeasonByYear, getSeasonFor, listSeasons } from "@/lib/data/season";
@@ -54,7 +54,7 @@ export default async function RosterPage(props: PageProps<"/roster">) {
         ) : players.length === 0 ? (
           <p className="py-10 text-muted">No players listed yet.</p>
         ) : (
-          <RosterGrid players={players} />
+          <RosterTable players={players} />
         )}
       </div>
     </div>

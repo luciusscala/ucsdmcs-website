@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { createGame, updateScore } from "@/app/admin/actions";
+import { createGame, updateGame } from "@/app/admin/actions";
 import { AdminForm } from "@/components/admin/admin-form";
 import { SetupNotice } from "@/components/admin/setup-notice";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -60,6 +60,13 @@ export default async function AdminSchedulePage() {
                 <input id="location" name="location" className="field" placeholder="John Muir Field / La Jolla, CA" />
               </div>
               <div>
+                <label className="field-label" htmlFor="address">Address</label>
+                <input id="address" name="address" className="field" placeholder="9500 Gilman Dr, La Jolla, CA 92093" />
+                <p className="mt-1 text-xs text-muted">
+                  Optional. Turns the location into a map link.
+                </p>
+              </div>
+              <div>
                 <label className="field-label" htmlFor="our_score">Our score</label>
                 <input id="our_score" name="our_score" type="number" min="0" className="field" />
               </div>
@@ -88,12 +95,23 @@ export default async function AdminSchedulePage() {
             <p className="headline mt-0.5 text-lg">
               {game.isHome ? "vs" : "at"} {game.opponent}
             </p>
-            {game.location && <p className="text-sm text-muted">{game.location}</p>}
 
-            {/* Score entry is the weekly job, so it's inline on every row. */}
-            <AdminForm action={updateScore} submitLabel="Save score" className="mt-3">
+            {/* Score entry is the weekly job, so it's inline on every row —
+                and venue rides along, to backfill games added before the
+                address column existed. */}
+            <AdminForm action={updateGame} submitLabel="Save" className="mt-3">
               <input type="hidden" name="id" value={game.id} />
-              <div className="flex items-end gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="field-label">Location</label>
+                  <input name="location" defaultValue={game.location ?? ""} className="field" />
+                </div>
+                <div>
+                  <label className="field-label">Address</label>
+                  <input name="address" defaultValue={game.address ?? ""} className="field" placeholder="9500 Gilman Dr, La Jolla, CA 92093" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-end gap-3">
                 <div className="w-24">
                   <label className="field-label">Ours</label>
                   <input name="our_score" type="number" min="0" defaultValue={game.ourScore ?? ""} className="field" />

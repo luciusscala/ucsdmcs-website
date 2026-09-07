@@ -36,7 +36,12 @@ export async function GET() {
       "DURATION:PT2H",
       `SUMMARY:${escape(`${game.isHome ? "vs" : "at"} ${game.opponent}`)}`,
     );
-    if (game.location) lines.push(`LOCATION:${escape(game.location)}`);
+    // Both, so the entry reads as a venue but still geocodes. A Set guards
+    // the case where the same string was pasted into each column.
+    const place = [
+      ...new Set([game.location, game.address].filter((part) => part)),
+    ].join(", ");
+    if (place) lines.push(`LOCATION:${escape(place)}`);
     lines.push("END:VEVENT");
   }
 

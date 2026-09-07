@@ -1,10 +1,10 @@
 import { getSeasonFor } from "@/lib/data/season";
-import { headshotUrl, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 /**
  * One `player_seasons` row with its `players` row embedded. Class, position
- * and number live on the join because they change season to season; name,
- * hometown and picture belong to the person.
+ * and number live on the join because they change season to season; name
+ * and hometown belong to the person.
  */
 type PlayerSeasonRow = {
   class: string;
@@ -14,20 +14,18 @@ type PlayerSeasonRow = {
     id: string;
     name: string;
     hometown: string | null;
-    picture_path: string | null;
   } | null;
 };
 
 export type Player = {
   id: string;
   name: string;
-  /** Freshman | Sophomore | Junior | Senior, per the valid_class constraint. */
+  /** Freshman | Sophomore | Junior | Senior | Graduate, per the valid_class
+   *  constraint. */
   year: string;
   position: string;
   number: number | null;
   hometown: string | null;
-  /** Already resolved to a public URL; null when the player has no headshot. */
-  headshot: string | null;
 };
 
 function toPlayer(row: PlayerSeasonRow): Player | null {
@@ -43,7 +41,6 @@ function toPlayer(row: PlayerSeasonRow): Player | null {
     position: row.position,
     number: row.number,
     hometown: person.hometown,
-    headshot: headshotUrl(person.picture_path),
   };
 }
 
@@ -61,7 +58,7 @@ export async function getPlayers(seasonId?: string): Promise<Player[]> {
 
   const { data, error } = await supabase
     .from("player_seasons")
-    .select("class, position, number, player:players(id, name, hometown, picture_path)")
+    .select("class, position, number, player:players(id, name, hometown)")
     .eq("season_id", season.id);
 
   if (error) throw new Error(`Failed to load players: ${error.message}`);
@@ -73,27 +70,65 @@ export async function getPlayers(seasonId?: string): Promise<Player[]> {
     .filter((player): player is Player => player !== null)
     .sort(
       (a, b) =>
-        (a.number ?? Infinity) - (b.number ?? Infinity) ||
-        a.name.localeCompare(b.name),
+        compareNumbers(a.number, b.number) || a.name.localeCompare(b.name),
     );
 }
 
-/**
- * Filter-tab order, back-to-front the way a lineup is read. Goalkeeper is
- * listed ahead of the current valid_position constraint, which omits it.
- */
-const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+/** Table abbreviations, as athletics rosters write them. */
+const POSITION_ABBREVIATION: Record<string, string> = {
+  Goalkeeper: "GK",
+  Defender: "D",
+  Midfielder: "MF",
+  Forward: "F",
+};
+
+const CLASS_ABBREVIATION: Record<string, string> = {
+  Freshman: "Fr.",
+  Sophomore: "So.",
+  Junior: "Jr.",
+  Senior: "Sr.",
+  Graduate: "Gr."
+};
+
+/** Falls through unchanged for any value not in the map, so a new
+ *  constraint value shows as itself rather than disappearing. */
+export const abbreviatePosition = (position: string) =>
+  POSITION_ABBREVIATION[position] ?? position;
+
+export const abbreviateClass = (year: string) =>
+  CLASS_ABBREVIATION[year] ?? year;
 
 /**
- * Positions actually present, in lineup order, with anything unrecognised
- * appended. Deriving from the data means no dead tab with a count of zero.
+ * Sort orders. Positions run back-to-front the way a lineup is read, classes
+ * by seniority — sorting either alphabetically would produce a meaningless
+ * order ("D, F, GK, MF"). Unknown values rank last rather than disappearing.
  */
-export function positionsIn(players: Player[]) {
-  const present = [...new Set(players.map((player) => player.position))];
-  const rank = (position: string) => {
-    const index = POSITION_ORDER.indexOf(position);
-    return index === -1 ? POSITION_ORDER.length : index;
-  };
-  return present.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+const POSITION_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+const CLASS_ORDER = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate"];
+
+const rankIn = (order: string[], value: string) => {
+  const index = order.indexOf(value);
+  return index === -1 ? order.length : index;
+};
+
+export const positionRank = (position: string) =>
+  rankIn(POSITION_ORDER, position);
+
+export const classRank = (year: string) => rankIn(CLASS_ORDER, year);
+
+/**
+ * Squad numbers ascending with unnumbered players always last, in either
+ * direction. Subtracting two Infinity placeholders would yield NaN, which
+ * makes the comparator undefined, so nulls are handled before the subtraction.
+ */
+export function compareNumbers(
+  a: number | null,
+  b: number | null,
+  factor = 1,
+) {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return (a - b) * factor;
 }
 

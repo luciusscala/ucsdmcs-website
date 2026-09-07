@@ -8,6 +8,7 @@ type GameRow = {
   game_date: string;
   is_home: boolean;
   location: string | null;
+  address: string | null;
   our_score: number | null;
   their_score: number | null;
   opponent: { name: string; logo_path: string | null } | null;
@@ -22,15 +23,32 @@ export type Game = {
   /** Already resolved to a public URL; null when the school has no crest. */
   opponentLogo: string | null;
   isHome: boolean;
+  /** The venue as it should read on the page: "John Muir Field, La Jolla". */
   location: string | null;
+  /** Street address, only for building a map link. Null on most rows. */
+  address: string | null;
   ourScore: number | null;
   theirScore: number | null;
 };
 
 export type Outcome = "W" | "L" | "D";
 
+/**
+ * A map link for a game's address. Google's universal search URL needs no
+ * API key, and iOS and Android both hand it off to the installed maps app.
+ *
+ * Keyed off `address`, not `location`: a label like "Los Angeles, CA" is
+ * worth printing but not worth dropping someone onto a map for.
+ */
+export const mapsUrl = (game: Game) =>
+  game.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        game.address,
+      )}`
+    : null;
+
 const SELECT =
-  "id, game_date, is_home, location, our_score, their_score, opponent:schools(name, logo_path)";
+  "id, game_date, is_home, location, address, our_score, their_score, opponent:schools(name, logo_path)";
 
 function toGame(row: GameRow): Game {
   // A to-one embed comes back as an object, but supabase-js widens the type to
@@ -45,6 +63,7 @@ function toGame(row: GameRow): Game {
     opponentLogo: logoUrl(school?.logo_path ?? null),
     isHome: row.is_home,
     location: row.location,
+    address: row.address,
     ourScore: row.our_score,
     theirScore: row.their_score,
   };

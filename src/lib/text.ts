@@ -1,4 +1,4 @@
-/** "AC" from "Ada Chen" — used by the headshot and crest fallbacks. */
+/** "AC" from "Ada Chen" — used by the crest fallback. */
 export const initialsOf = (name: string) =>
   name
     .split(/\s+/)

@@ -93,11 +93,3 @@ body {
   margin-bottom: 0.25rem;
 }
 
-/* Aligns a full-bleed split section's text with the page container gutter */
-@utility pad-gutter-l {
-  padding-left: max(1.25rem, calc((100vw - 76rem) / 2));
-}
-
-@utility pad-gutter-r {
-  padding-right: max(1.25rem, calc((100vw - 76rem) / 2));
-}

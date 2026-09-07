@@ -1,3 +1,4 @@
+import { compareNumbers } from "@/lib/data/roster";
 import { requireAdminClient } from "@/lib/supabase-admin";
 import "server-only";
 
@@ -21,6 +22,7 @@ export type AdminGame = {
   gameDate: string;
   isHome: boolean;
   location: string | null;
+  address: string | null;
   ourScore: number | null;
   theirScore: number | null;
   opponent: string;
@@ -86,8 +88,7 @@ export async function listRoster(seasonId: string): Promise<AdminRosterEntry[]> 
     })
     .sort(
       (a, b) =>
-        (a.number ?? Infinity) - (b.number ?? Infinity) ||
-        a.name.localeCompare(b.name),
+        compareNumbers(a.number, b.number) || a.name.localeCompare(b.name),
     );
 }
 
@@ -96,6 +97,7 @@ type GameRow = {
   game_date: string;
   is_home: boolean;
   location: string | null;
+  address: string | null;
   our_score: number | null;
   their_score: number | null;
   opponent: { name: string } | null;
@@ -104,7 +106,7 @@ type GameRow = {
 export async function listGames(seasonId: string): Promise<AdminGame[]> {
   const { data, error } = await requireAdminClient()
     .from("games")
-    .select("id, game_date, is_home, location, our_score, their_score, opponent:schools(name)")
+    .select("id, game_date, is_home, location, address, our_score, their_score, opponent:schools(name)")
     .eq("season_id", seasonId)
     .order("game_date", { ascending: true });
 
@@ -117,6 +119,7 @@ export async function listGames(seasonId: string): Promise<AdminGame[]> {
       gameDate: row.game_date,
       isHome: row.is_home,
       location: row.location,
+      address: row.address,
       ourScore: row.our_score,
       theirScore: row.their_score,
       opponent: school?.name ?? "TBD",

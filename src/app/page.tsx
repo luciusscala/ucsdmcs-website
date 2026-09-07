@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MatchLocation } from "@/components/match-location";
 import { getPlayers } from "@/lib/data/roster";
 import {
   formatTally,
@@ -83,11 +84,10 @@ export default async function Home() {
                 </span>
               </p>
             </div>
-            {next.location && (
-              <p className="w-full truncate text-sm text-muted md:w-auto md:max-w-xs">
-                {next.location}
-              </p>
-            )}
+            <MatchLocation
+              game={next}
+              className="w-full truncate text-sm text-muted md:w-auto md:max-w-xs"
+            />
           </div>
         </section>
       )}

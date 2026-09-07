@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { MatchLocation } from "@/components/match-location";
 import { type Game, hasResult, outcome } from "@/lib/data/schedule";
 import { formatGameDate, formatTime } from "@/lib/format";
 import { initialsOf } from "@/lib/text";
@@ -47,11 +48,10 @@ export function MatchRow({ game }: { game: Game }) {
       </div>
 
       {/* Wraps to its own line under the name on mobile, own column from md up. */}
-      {game.location && (
-        <p className="order-last w-full truncate pl-16 text-sm text-muted md:order-none md:w-56 md:shrink-0 md:pl-0 lg:w-72">
-          {game.location}
-        </p>
-      )}
+      <MatchLocation
+        game={game}
+        className="order-last w-full truncate pl-16 text-sm text-muted md:order-none md:w-56 md:shrink-0 md:pl-0 lg:w-72"
+      />
 
       {/* Never blank: a played game shows its score, an upcoming one says so,
           so "not played yet" can't be mistaken for missing data. */}

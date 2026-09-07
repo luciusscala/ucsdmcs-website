@@ -99,6 +99,7 @@ export async function createGame(_state: ActionState, data: FormData) {
       game_date: new Date(gameDate).toISOString(),
       is_home: data.get("is_home") === "on",
       location: text(data, "location"),
+      address: text(data, "address"),
       our_score: int(data, "our_score"),
       their_score: int(data, "their_score"),
     });
@@ -110,7 +111,8 @@ export async function createGame(_state: ActionState, data: FormData) {
   return null;
 }
 
-export async function updateScore(_state: ActionState, data: FormData) {
+/** Scores plus venue, so an address can be filled in after the game is created. */
+export async function updateGame(_state: ActionState, data: FormData) {
   await requireAdmin();
 
   const id = text(data, "id");
@@ -118,7 +120,12 @@ export async function updateScore(_state: ActionState, data: FormData) {
 
   const { error } = await requireAdminClient()
     .from("games")
-    .update({ our_score: int(data, "our_score"), their_score: int(data, "their_score") })
+    .update({
+      location: text(data, "location"),
+      address: text(data, "address"),
+      our_score: int(data, "our_score"),
+      their_score: int(data, "their_score"),
+    })
     .eq("id", id);
 
   if (error) return { error: error.message };
