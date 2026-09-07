@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { MobileNav } from "@/components/mobile-nav";
 import { NAV } from "@/lib/nav";
 
 export function SiteHeader() {
@@ -9,23 +10,32 @@ export function SiteHeader() {
        onto the navy above and below without being clipped by page content. */
     <header className="relative z-20">
       {/* Navy rule above the gold bar; the crest overhangs onto it. */}
-      <div className="h-6 bg-navy" />
+      <div className="h-5 bg-navy" />
 
-      <div className="bg-yellow">
-        <div className="container-page flex min-h-14 flex-wrap items-center gap-x-6 gap-y-1 py-2">
-          {/* 88px crest in a 56px bar: -my-4 lets it break out top and bottom. */}
-          <Link href="/" className="-my-4 shrink-0" aria-label="Home">
+      {/* Positioned so the mobile menu can drop out of the bar's bottom edge. */}
+      <div className="relative bg-yellow">
+        <div className="container-page flex min-h-11 items-center gap-x-6 py-1.5">
+          {/* 72px crest in a 44px bar: -my-3.5 lets it break out top and bottom.
+              `relative` keeps it painted over the open mobile menu, so it
+              overhangs that panel the same way it overhangs the navy rule. */}
+          <Link
+            href="/"
+            className="relative z-10 -my-3.5 shrink-0"
+            aria-label="Home"
+          >
             <Image
               src="/logos/ucsdtridentlogo.png"
               alt=""
               width={88}
               height={88}
-              className="size-22 drop-shadow-sm"
+              className="size-18 drop-shadow-sm"
               priority
             />
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-semibold text-navy">
+          {/* The links themselves from md up; below that they live in the
+              dropdown, which keeps the bar to one row at every width. */}
+          <nav className="hidden flex-wrap items-center gap-x-6 gap-y-1 text-sm font-semibold text-navy md:flex">
             {NAV.map((item) =>
               item.external ? (
                 <a
@@ -48,6 +58,8 @@ export function SiteHeader() {
               ),
             )}
           </nav>
+
+          <MobileNav />
         </div>
       </div>
     </header>
