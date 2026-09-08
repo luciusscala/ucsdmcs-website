@@ -30,7 +30,7 @@ export function MatchLocation({
           rel="noopener noreferrer"
           className="shrink-0 font-medium text-blue underline underline-offset-4 transition hover:opacity-70"
         >
-          Directions
+          Field Directions
         </a>
       )}
     </p>
