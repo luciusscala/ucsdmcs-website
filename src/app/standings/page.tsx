@@ -3,11 +3,14 @@ import type { Metadata } from "next";
 import { StandingsTable } from "@/components/standings-table";
 import {
   DIVISION,
-  MICROSITE_URL,
   SEASON_YEAR,
   type TeamRecord,
   getStandings,
 } from "@/lib/data/standings";
+
+/** The club soccer national rankings, published as a Google Sheet. */
+const NATIONAL_RANKINGS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQohf_rNSzlAU3ors24diYCEbrLl0zVnFsal8kKYM9T0A5zzdahkWgRdKu3FsKy87MqOLI2ReNu-zkT/pubhtml#gid=1907347858";
 
 export const metadata: Metadata = {
   title: "Standings",
@@ -43,22 +46,14 @@ export default async function StandingsPage() {
         </h1>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 bg-surface px-4 py-3">
-          <span className="text-sm text-muted">
-            {records.length} {records.length === 1 ? "team" : "teams"}
-          </span>
-
-          <span className="text-sm text-muted">
-            3 points for a win, 1 for a draw
-          </span>
-
           <a
-            href={MICROSITE_URL}
-            // The league's table is the source of record; keep ours open behind it.
+            href={NATIONAL_RANKINGS_URL}
+            // Published from someone else's spreadsheet; keep ours open behind it.
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-medium text-blue underline underline-offset-4 transition hover:opacity-70"
           >
-            League standings
+            National Rankings
           </a>
         </div>
 

@@ -16,13 +16,19 @@ export const NAV = [
 ] as const;
 
 /**
- * The club's public accounts, linked from the footer.
- *
- * TODO: swap in the real profile URLs. These are deliberately left inert
- * rather than guessed — a footer link pointing at the wrong account is worse
- * than one that goes nowhere.
+ * The club's public accounts, linked from the footer and named on the
+ * homepage. `handle` is what the club prints; `href` is that handle on the
+ * platform's canonical profile path.
  */
 export const SOCIAL = [
-  { href: "#", label: "Instagram" },
-  { href: "#", label: "Facebook" },
+  {
+    href: "https://www.instagram.com/ucsdclubsoccer",
+    label: "Instagram",
+    handle: "@ucsdclubsoccer",
+  },
+  {
+    href: "https://www.facebook.com/ucsdsoccerclub",
+    label: "Facebook",
+    handle: "@ucsdsoccerclub",
+  },
 ] as const;

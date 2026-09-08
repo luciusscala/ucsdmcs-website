@@ -1,117 +1,97 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import Image from "next/image";
 
-import { MatchLocation } from "@/components/match-location";
-import { getPlayers } from "@/lib/data/roster";
-import {
-  formatTally,
-  getGames,
-  nextGame,
-  seasonRecord,
-} from "@/lib/data/schedule";
-import { formatGameDate, formatTime } from "@/lib/format";
+import { SectionHeading } from "@/components/section-heading";
+import { ABOUT, ACCOLADES, OFFICERS } from "@/lib/club";
+import { formatTally, getGames, seasonRecord } from "@/lib/data/schedule";
+
+export const metadata: Metadata = {
+  description:
+    "UC San Diego men's club soccer — who we are, how the season runs, and how to reach us.",
+};
 
 /** Serve a static page, refreshed at most every five minutes. */
 export const revalidate = 300;
 
-function EntryCard({
-  href,
-  title,
-  detail,
-}: {
-  href: string;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="block rounded-lg bg-background p-5 text-foreground transition hover:bg-surface"
-    >
-      <h2 className="headline text-2xl">{title}</h2>
-      <p className="mt-1 text-sm text-muted">{detail}</p>
-    </Link>
-  );
-}
-
 export default async function Home() {
-  // Both pages already tolerate an outage; the homepage does the same rather
+  // The schedule already tolerates an outage; the homepage does the same rather
   // than letting a failed fetch take down the site's front door.
-  const [games, players] = await Promise.all([
-    getGames().catch((error) => {
-      console.error(error);
-      return [];
-    }),
-    getPlayers().catch((error) => {
-      console.error(error);
-      return [];
-    }),
-  ]);
+  const games = await getGames().catch((error) => {
+    console.error(error);
+    return [];
+  });
 
-  const next = nextGame(games);
   const record = seasonRecord(games);
 
   return (
-    <div className="container-page py-14 sm:py-20">
-      <section className="flex flex-col items-center text-center">
-        <h1 className="headline text-4xl sm:text-5xl">
+    <div className="container-page py-8 sm:py-10">
+      <div className="rounded-xl bg-background p-4 text-foreground sm:p-6">
+        {/* Shown whole at its own 3810x2521, so nobody in the squad is cropped
+            out. The intrinsic size lets the browser hold the right space before
+            it loads, which keeps the heading below from jumping. */}
+        <Image
+          src="/team_photo.JPG"
+          alt="The UC San Diego men's club soccer squad, lined up in front of a goal."
+          width={3810}
+          height={2521}
+          priority
+          sizes="(min-width: 1216px) 1168px, 100vw"
+          className="h-auto w-full rounded-lg"
+        />
+
+        <h1 className="headline mt-5 text-xl sm:text-2xl">
           UC San Diego Men&rsquo;s Club Soccer
         </h1>
+
         {record.played > 0 && (
-          <p className="mt-3 text-sm text-yellow">
-            {formatTally(record.overall)} through {record.played}{" "}
-            {record.played === 1 ? "game" : "games"}
+          <p className="mt-3 text-sm">
+            <span className="headline tabular-nums">
+              {formatTally(record.overall)}
+            </span>{" "}
+            <span className="text-muted">
+              through {record.played} {record.played === 1 ? "game" : "games"}
+            </span>
           </p>
         )}
-      </section>
 
-      {next && (
-        <section className="mt-12">
-          <h2 className="text-sm font-medium text-yellow">Next match</h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-background p-5 text-foreground">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm">
-                <span className="font-medium">
-                  {formatGameDate(next.kickoff)}
-                </span>
-                <span className="text-muted"> / {formatTime(next.kickoff)}</span>
-              </p>
-              <p className="mt-0.5 flex items-center gap-2">
-                <span className="shrink-0 rounded-sm bg-navy px-1.5 py-0.5 text-xs font-bold uppercase text-yellow">
-                  {next.isHome ? "vs" : "at"}
-                </span>
-                <span className="headline truncate text-lg sm:text-xl">
-                  {next.opponent}
-                </span>
-              </p>
+        <div className="mt-6 space-y-3 text-sm leading-relaxed sm:text-base">
+          {ABOUT.map((paragraph) => (
+            <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+          ))}
+        </div>
+
+        <SectionHeading>Recent accolades</SectionHeading>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {ACCOLADES.map((accolade) => (
+            <li
+              key={accolade}
+              className="bg-navy px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-yellow"
+            >
+              {accolade}
+            </li>
+          ))}
+        </ul>
+
+        <SectionHeading>Executives</SectionHeading>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+          {OFFICERS.map((officer) => (
+            <div key={officer.role} className="bg-surface px-4 py-3">
+              <dt className="text-xs uppercase tracking-wider text-muted">
+                {officer.role}
+              </dt>
+              <dd className="mt-1">
+                <span className="headline block">{officer.name}</span>
+                <a
+                  href={`mailto:${officer.email}`}
+                  className="mt-0.5 block truncate text-sm text-blue underline underline-offset-4 transition hover:opacity-70"
+                >
+                  {officer.email}
+                </a>
+              </dd>
             </div>
-            <MatchLocation
-              game={next}
-              className="w-full text-sm text-muted md:w-auto md:max-w-xs"
-            />
-          </div>
-        </section>
-      )}
-
-      <section className="mt-8 grid gap-4 sm:grid-cols-2">
-        <EntryCard
-          href="/schedule"
-          title="Schedule & Results"
-          detail={
-            games.length > 0
-              ? `${games.length} ${games.length === 1 ? "game" : "games"} this season`
-              : "Fixtures and final scores"
-          }
-        />
-        <EntryCard
-          href="/roster"
-          title="Roster"
-          detail={
-            players.length > 0
-              ? `${players.length} ${players.length === 1 ? "player" : "players"}`
-              : "The full squad"
-          }
-        />
-      </section>
+          ))}
+        </dl>
+      </div>
     </div>
   );
 }

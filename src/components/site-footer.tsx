@@ -1,7 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
+import { Icon } from "@/components/icons";
 import { SOCIAL } from "@/lib/nav";
 
 /**
@@ -46,27 +45,6 @@ const AFFILIATIONS = [
   },
 ];
 
-/**
- * Both marks are drawn as strokes at one weight rather than borrowed from the
- * brand kits: Instagram ships as linework and Facebook as a solid disc, and
- * side by side at this size the disc reads about twice as heavy.
- */
-const SOCIAL_ICONS: Record<string, ReactNode> = {
-  Instagram: (
-    <>
-      <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4" />
-      <circle cx="12" cy="12" r="4.4" />
-      <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
-    </>
-  ),
-  Facebook: (
-    <>
-      <circle cx="12" cy="12" r="9.4" />
-      <path d="M14.9 7.7h-1.3a2.3 2.3 0 0 0-2.3 2.3v11.4M9 13.4h5.6" />
-    </>
-  ),
-};
-
 export function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-white/10">
@@ -108,39 +86,10 @@ export function SiteFooter() {
                 aria-label={account.label}
                 className="flex size-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="size-[19px]"
-                >
-                  {SOCIAL_ICONS[account.label]}
-                </svg>
+                <Icon name={account.label} className="size-[19px]" />
               </a>
             ))}
           </div>
-        </div>
-
-        {/* Dimmed at rest so the marks sit behind the club's own name in the
-            hierarchy, and brought up individually on hover. */}
-        <div className="flex max-w-full shrink-0 flex-wrap items-center gap-x-9 gap-y-6 sm:gap-x-11">
-          {AFFILIATIONS.map((logo) => (
-            <Image
-              key={logo.src}
-              src={logo.src}
-              alt={logo.alt}
-              width={logo.width}
-              height={logo.height}
-              /* SVG is refused by the image optimizer, and a vector has
-                 nothing to gain from it anyway. */
-              unoptimized={logo.src.endsWith(".svg")}
-              className={`${logo.className} ${logo.flip ? "opacity-70 brightness-0 invert" : "opacity-80"} transition hover:opacity-100`}
-            />
-          ))}
         </div>
       </div>
     </footer>

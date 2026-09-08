@@ -184,6 +184,3 @@ export const formatDifference = (difference: number) =>
  */
 export const DIVISION = "SoCal";
 export const SEASON_YEAR = 2026;
-
-/** The league's own standings page, linked as the source. */
-export const MICROSITE_URL = `https://season-microsites.ui.sportsengine.com/seasons/${PROGRAM_ID}/divisions/${FLIGHT_ID}?divisionTab=standings`;
