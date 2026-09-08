@@ -87,3 +87,11 @@ export function fromDateTimeLocal(value: string) {
 
   return new Date(timestamp).toISOString();
 }
+
+/**
+ * "+4", "-2", "0" — a goal difference reads ambiguously as a bare number, so
+ * the sign is always explicit. Shared by the standings table and the schedule's
+ * record panel.
+ */
+export const formatDifference = (difference: number) =>
+  difference > 0 ? `+${difference}` : String(difference);

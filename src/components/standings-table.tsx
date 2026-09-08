@@ -1,16 +1,18 @@
 import Image from "next/image";
 
-import { type TeamRecord, formatDifference } from "@/lib/data/standings";
+import { formatDifference } from "@/lib/format";
+import type { TeamRecord } from "@/lib/data/standings";
 import { initialsOf } from "@/lib/text";
 
 /**
  * The stat columns, in the order a league table is normally read. Header label
  * and cell value come from the same entry so the two can't drift apart.
  *
- * Goals for and against leave the table below `sm`, where ten columns won't fit
- * a phone without a sideways scroll; goal difference stays, since it carries
- * the same information in one column. Yellow and red cards are in the payload
- * but aren't shown — they decide only the fifth tiebreaker.
+ * Most visits are on a phone, so the mobile set is the one that has to fit:
+ * position, team, W/D/L, GD and points. Games played leaves below `sm` because
+ * W + D + L already gives it, and goals for and against leave because goal
+ * difference carries the same story in one column. Yellow and red cards are in
+ * the payload but never shown — they decide only the fifth tiebreaker.
  */
 const COLUMNS: {
   label: string;
@@ -19,7 +21,12 @@ const COLUMNS: {
   className?: string;
   strong?: boolean;
 }[] = [
-  { label: "GP", name: "Games played", value: (r) => r.played },
+  {
+    label: "GP",
+    name: "Games played",
+    value: (r) => r.played,
+    className: "hidden sm:table-cell",
+  },
   { label: "W", name: "Wins", value: (r) => r.won },
   { label: "D", name: "Draws", value: (r) => r.drawn },
   { label: "L", name: "Losses", value: (r) => r.lost },

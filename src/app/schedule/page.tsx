@@ -15,6 +15,7 @@ import {
   getSeasonFor,
   listSeasons,
 } from "@/lib/data/season";
+import { formatDifference } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Schedule & Scores",
@@ -33,12 +34,16 @@ function RecordPanel({ games }: { games: Game[] }) {
     { label: "Away", value: formatTally(record.away) },
     { label: "Goals For", value: String(record.gf) },
     { label: "Goals Against", value: String(record.ga) },
+    { label: "Goal Diff", value: formatDifference(record.gd) },
   ];
 
   return (
     // gap-px over a tinted ground draws the hairlines, which survives the grid
     // wrapping at every breakpoint where real borders would double up.
-    <dl className="mt-4 grid grid-cols-2 gap-px bg-border sm:grid-cols-4 lg:grid-cols-7">
+    //
+    // Eight tiles, not seven: every column count here divides eight exactly, so
+    // the last row always fills. Seven left a hole showing the ground through.
+    <dl className="mt-4 grid grid-cols-2 gap-px bg-border sm:grid-cols-4 lg:grid-cols-8">
       {stats.map((stat) => (
         <div key={stat.label} className="bg-background px-3 py-3 text-center">
           <dt className="text-xs text-muted">{stat.label}</dt>
@@ -83,7 +88,7 @@ export default async function SchedulePage(props: PageProps<"/schedule">) {
         <div className="mt-4 flex flex-wrap items-center gap-3 bg-surface px-4 py-3">
           <a
             href="/schedule/calendar"
-            className="bg-navy px-3 py-1.5 text-sm font-semibold text-yellow transition hover:opacity-90"
+            className="bg-navy px-3 py-1.5 text-sm font-semibold text-yellow transition duration-200 ease-out hover:opacity-90 active:scale-[0.98] active:opacity-80"
           >
             Add to calendar
           </a>

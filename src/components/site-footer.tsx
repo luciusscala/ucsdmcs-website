@@ -3,48 +3,6 @@ import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { SOCIAL } from "@/lib/nav";
 
-/**
- * The bodies the club competes under and the campus department it sits in.
- *
- * `flip` marks a single-colour lockup, which is inverted to white — the whole
- * mark is one ink on transparent, so a white version loses nothing (the
- * trident's slashes are holes in the artwork, not white pixels). The USCCS
- * badge is deliberately left alone: it's a filled, multi-colour crest, so the
- * same treatment would flatten it into a plain white disc, and a badge with
- * its own gold ring already reads on a dark ground.
- *
- * Heights are tuned per mark rather than shared. A single height would be the
- * wrong call twice over: the NIRSA wordmark is wide and short, and the
- * Recreation lockup carries internal whitespace that the dense USCCS badge
- * doesn't, so matching their boxes leaves the trident looking undersized.
- */
-const AFFILIATIONS = [
-  {
-    src: "/logos/reclogo.png",
-    alt: "UC San Diego Recreation",
-    width: 542,
-    height: 632,
-    flip: true,
-    className: "h-13 w-auto sm:h-15",
-  },
-  {
-    src: "/logos/nirsalogo.svg",
-    alt: "NIRSA",
-    width: 180,
-    height: 98,
-    flip: true,
-    className: "h-8 w-auto sm:h-9",
-  },
-  {
-    src: "/logos/usccslogo.png",
-    alt: "US College Club Soccer",
-    width: 600,
-    height: 600,
-    flip: false,
-    className: "h-12 w-auto sm:h-14",
-  },
-];
-
 export function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-white/10">

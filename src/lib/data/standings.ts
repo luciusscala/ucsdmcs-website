@@ -174,9 +174,6 @@ export async function getStandings(): Promise<TeamRecord[]> {
     .sort(compare);
 }
 
-/** "+4", "-2", "0" — a table of bare numbers reads ambiguously without the sign. */
-export const formatDifference = (difference: number) =>
-  difference > 0 ? `+${difference}` : String(difference);
 
 /**
  * How the league names this division and season, for the page heading. Both

@@ -51,7 +51,7 @@ export default async function StandingsPage() {
             // Published from someone else's spreadsheet; keep ours open behind it.
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-blue underline underline-offset-4 transition hover:opacity-70"
+            className="text-sm font-medium text-blue underline underline-offset-4 transition duration-200 ease-out hover:opacity-70 active:opacity-60"
           >
             National Rankings
           </a>

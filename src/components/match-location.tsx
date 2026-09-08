@@ -28,7 +28,7 @@ export function MatchLocation({
           // A map leaves the site entirely; keep the schedule open behind it.
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 font-medium text-blue underline underline-offset-4 transition hover:opacity-70"
+          className="shrink-0 font-medium text-blue underline underline-offset-4 transition duration-200 ease-out hover:opacity-70 active:opacity-60"
         >
           Field Directions
         </a>

@@ -186,6 +186,7 @@ export function seasonRecord(games: Game[]) {
     away,
     gf,
     ga,
+    gd: gf - ga,
     played: overall.w + overall.d + overall.l,
     pct: winPct(overall),
   };

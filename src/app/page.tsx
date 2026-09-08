@@ -83,7 +83,7 @@ export default async function Home() {
                 <span className="headline block">{officer.name}</span>
                 <a
                   href={`mailto:${officer.email}`}
-                  className="mt-0.5 block truncate text-sm text-blue underline underline-offset-4 transition hover:opacity-70"
+                  className="mt-0.5 block truncate text-sm text-blue underline underline-offset-4 transition duration-200 ease-out hover:opacity-70 active:opacity-60"
                 >
                   {officer.email}
                 </a>

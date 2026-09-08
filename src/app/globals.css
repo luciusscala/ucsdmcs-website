@@ -44,6 +44,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Most visits are on a phone, where the browser's own grey tap flash fires on
+   every link and reads as a rendering glitch against the brand colours. The
+   `active:` states on buttons and rows replace it with feedback we control. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 ::selection {
   background: var(--yellow);
   color: var(--navy);
@@ -52,6 +59,20 @@ body {
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+
+/* Anything that moves on this site is decoration on top of a state change the
+   user already asked for, so honouring the setting costs nothing: the menu
+   still opens, it just stops travelling to get there. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* --- Reusable primitives -------------------------------------------------- */

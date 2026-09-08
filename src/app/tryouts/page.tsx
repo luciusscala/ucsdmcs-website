@@ -60,7 +60,7 @@ export default function TryoutsPage() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Tryout registration form"
-            className="shrink-0 self-start bg-surface p-3 transition hover:opacity-90"
+            className="shrink-0 self-start bg-surface p-3 transition duration-200 ease-out hover:bg-border active:scale-[0.98]"
           >
             <Image
               src="/tryouts-qr.svg"
@@ -79,7 +79,7 @@ export default function TryoutsPage() {
               href={TRYOUT_FORM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-navy px-3 py-1.5 text-sm font-semibold text-yellow transition hover:opacity-90"
+              className="inline-block bg-navy px-3 py-1.5 text-sm font-semibold text-yellow transition duration-200 ease-out hover:opacity-90 active:scale-[0.98] active:opacity-80"
             >
               Open the tryout form
             </a>
@@ -87,7 +87,7 @@ export default function TryoutsPage() {
               Questions? Email{" "}
               <a
                 href={`mailto:${TEAM_EMAIL}`}
-                className="font-medium text-blue underline underline-offset-4 transition hover:opacity-70"
+                className="font-medium text-blue underline underline-offset-4 transition duration-200 ease-out hover:opacity-70 active:opacity-60"
               >
                 {TEAM_EMAIL}
               </a>

@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { DesktopNav } from "@/components/desktop-nav";
 import { MobileNav } from "@/components/mobile-nav";
-import { NAV } from "@/lib/nav";
 
 export function SiteHeader() {
   return (
@@ -35,29 +35,7 @@ export function SiteHeader() {
 
           {/* The links themselves from md up; below that they live in the
               dropdown, which keeps the bar to one row at every width. */}
-          <nav className="hidden flex-wrap items-center gap-x-6 gap-y-1 text-sm font-semibold text-navy md:flex">
-            {NAV.map((item) =>
-              item.external ? (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition hover:opacity-70"
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="transition hover:opacity-70"
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
-          </nav>
+          <DesktopNav />
 
           <MobileNav />
         </div>
