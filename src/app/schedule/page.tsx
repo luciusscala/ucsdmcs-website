@@ -32,8 +32,6 @@ function RecordPanel({ games }: { games: Game[] }) {
     { label: "Streak", value: currentStreak(games) },
     { label: "Home", value: formatTally(record.home) },
     { label: "Away", value: formatTally(record.away) },
-    { label: "Goals For", value: String(record.gf) },
-    { label: "Goals Against", value: String(record.ga) },
     { label: "Goal Diff", value: formatDifference(record.gd) },
   ];
 
@@ -41,9 +39,9 @@ function RecordPanel({ games }: { games: Game[] }) {
     // gap-px over a tinted ground draws the hairlines, which survives the grid
     // wrapping at every breakpoint where real borders would double up.
     //
-    // Eight tiles, not seven: every column count here divides eight exactly, so
-    // the last row always fills. Seven left a hole showing the ground through.
-    <dl className="mt-4 grid grid-cols-2 gap-px bg-border sm:grid-cols-4 lg:grid-cols-8">
+    // Six tiles, and every column count here divides six exactly, so the last
+    // row always fills rather than leaving a hole showing the ground through.
+    <dl className="mt-4 grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-6">
       {stats.map((stat) => (
         <div key={stat.label} className="bg-background px-3 py-3 text-center">
           <dt className="text-xs text-muted">{stat.label}</dt>
