@@ -44,7 +44,7 @@ export function SiteFooter() {
                 aria-label={account.label}
                 className="flex size-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
               >
-                <Icon name={account.label} className="size-[19px]" />
+                <Icon name={account.label} className="size-4.75" />
               </a>
             ))}
           </div>
