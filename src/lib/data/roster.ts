@@ -1,3 +1,4 @@
+import { cached } from "@/lib/data/cache";
 import { getSeasonFor } from "@/lib/data/season";
 import { supabase } from "@/lib/supabase";
 
@@ -48,7 +49,9 @@ function toPlayer(row: PlayerSeasonRow): Player | null {
  * A season's squad, by number with unnumbered players last. Without an
  * explicit id this falls back to whichever season the roster defaults to.
  */
-export async function getPlayers(seasonId?: string): Promise<Player[]> {
+export const getPlayers = cached("players", async (
+  seasonId?: string,
+): Promise<Player[]> => {
   if (!supabase) return [];
 
   const season = seasonId
@@ -72,7 +75,7 @@ export async function getPlayers(seasonId?: string): Promise<Player[]> {
       (a, b) =>
         compareNumbers(a.number, b.number) || a.name.localeCompare(b.name),
     );
-}
+});
 
 /** Table abbreviations, as athletics rosters write them. */
 const POSITION_ABBREVIATION: Record<string, string> = {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { NAV, isActivePath } from "@/lib/nav";
@@ -15,6 +15,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   /* Escape, or a tap anywhere off the menu, closes it. Nothing to bind while
      it's shut, so the listeners only exist for as long as the panel does. */
@@ -35,6 +36,18 @@ export function MobileNav() {
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, [open]);
+
+  /* The panel is collapsed to zero height rather than unmounted, so its links
+     never enter the viewport and Next's own prefetch-on-scroll never fires for
+     them. Warming the routes as the menu opens buys the few hundred milliseconds
+     between opening it and choosing a link, which is the difference between a
+     tap landing instantly and sitting on the old page while the server answers. */
+  useEffect(() => {
+    if (!open) return;
+    for (const item of NAV) {
+      if (!item.external) router.prefetch(item.href);
+    }
+  }, [open, router]);
 
   /* Tapping a link closes the panel on its own, but a back or forward gesture
      doesn't pass through that handler. Closing on the path itself covers both.

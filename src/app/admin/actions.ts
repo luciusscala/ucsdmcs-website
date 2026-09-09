@@ -1,7 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { PUBLIC_DATA } from "@/lib/data/cache";
 
 import {
   checkPassword,
@@ -16,7 +18,19 @@ export type ActionState = { error?: string } | null;
 
 /** Refresh both public pages after any write, rather than waiting out the ISR window. */
 function revalidatePublic() {
+  // The cached Supabase reads behind every public page. Without this the paths
+  // below would re-render against the same stale rows.
+  //
+  // `expire: 0` rather than the recommended "max": this runs immediately after
+  // the admin's own write, and stale-while-revalidate would hand them back the
+  // row they just changed. One blocking query is the right trade here.
+  revalidateTag(PUBLIC_DATA, { expire: 0 });
+
+  // Statically rendered pages hold their own output, so they need regenerating
+  // as well as re-reading. `/standings` joins crests from `schools`, so a new
+  // school logo shows up there too.
   revalidatePath("/");
+  revalidatePath("/standings");
   revalidatePath("/schedule");
   revalidatePath("/roster");
 }

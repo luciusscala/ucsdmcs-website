@@ -6,9 +6,10 @@ import { MobileNav } from "@/components/mobile-nav";
 
 export function SiteHeader() {
   return (
-    /* Raised so the crest, which is taller than the gold bar, can overhang
-       onto the navy above and below without being clipped by page content. */
-    <header className="relative z-20">
+    /* Sticks to the top so the nav is one tap away however far down the page
+       you are — the reason it's raised above page content, which now scrolls
+       beneath it, as well as letting the crest overhang the bar it sits in. */
+    <header className="sticky top-0 z-30">
       {/* Navy rule above the gold bar; the crest overhangs onto it. */}
       <div className="h-5 bg-navy" />
 

@@ -1,3 +1,4 @@
+import { cached } from "@/lib/data/cache";
 import { getSeasonFor } from "@/lib/data/season";
 import { logoUrl, supabase } from "@/lib/supabase";
 
@@ -74,7 +75,9 @@ function toGame(row: GameRow): Game {
  * A season's games, oldest first. Postgres does the ordering. Without an
  * explicit id this falls back to whichever season the schedule defaults to.
  */
-export async function getGames(seasonId?: string): Promise<Game[]> {
+export const getGames = cached("games", async (
+  seasonId?: string,
+): Promise<Game[]> => {
   if (!supabase) return [];
 
   const season = seasonId
@@ -91,7 +94,7 @@ export async function getGames(seasonId?: string): Promise<Game[]> {
   if (error) throw new Error(`Failed to load games: ${error.message}`);
 
   return (data as unknown as GameRow[]).map(toGame);
-}
+});
 
 /** There is no status column, so a game counts as played once both scores land. */
 export const hasResult = (

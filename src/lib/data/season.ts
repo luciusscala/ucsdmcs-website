@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { cached } from "@/lib/data/cache";
 import { supabase } from "@/lib/supabase";
 
 export type Season = {
@@ -25,7 +26,7 @@ type SeasonRow = Season & { is_current: boolean };
  * last season always says so.
  */
 /** Every season, newest first — the options in the schedule's year picker. */
-export const listSeasons = cache(async (): Promise<Season[]> => {
+export const listSeasons = cache(cached("seasons", async (): Promise<Season[]> => {
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -35,7 +36,7 @@ export const listSeasons = cache(async (): Promise<Season[]> => {
 
   if (error) throw new Error(`Failed to load seasons: ${error.message}`);
   return (data ?? []) as Season[];
-});
+}));
 
 /** Resolves a `?season=` year to a real season, or null when it matches none. */
 export const getSeasonByYear = cache(async (year: number) => {
@@ -44,7 +45,7 @@ export const getSeasonByYear = cache(async (year: number) => {
 });
 
 export const getSeasonFor = cache(
-  async (table: SeasonScopedTable): Promise<Season | null> => {
+  cached("season-for", async (table: SeasonScopedTable): Promise<Season | null> => {
     if (!supabase) return null;
 
     const [seasons, rows] = await Promise.all([
@@ -88,5 +89,5 @@ export const getSeasonFor = cache(
     // Nothing anywhere: fall back to the current season so the page still
     // names a year alongside its empty state.
     return strip(current ?? all[0]);
-  },
+  }),
 );
