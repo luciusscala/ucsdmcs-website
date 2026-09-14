@@ -19,7 +19,7 @@ export default async function RosterPage(props: PageProps<"/roster">) {
   const seasons = await listSeasons();
   const season =
     (Number.isInteger(requested) ? await getSeasonByYear(requested) : null) ??
-    (await getSeasonFor("player_seasons"));
+    (await getSeasonFor("roster"));
 
   // As on the schedule, a Supabase outage degrades to an error state rather
   // than failing the build. "Unavailable" stays distinct from "no players".

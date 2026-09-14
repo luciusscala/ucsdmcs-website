@@ -19,8 +19,9 @@ function projectOrigin(raw: string | undefined): string | null {
 const url = projectOrigin(process.env.SUPABASE_URL);
 
 /**
- * Publishable key (`sb_publishable_...`). It respects RLS, so the database
- * needs a read policy on `games` and `schools`. Never a secret key here.
+ * Publishable key (`sb_publishable_...`). It respects RLS, so every table the
+ * public pages read needs a read policy: `seasons`, `events`, `games`, `teams`,
+ * `fields`, `roster` and `people`. Never a secret key here.
  */
 const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 
@@ -47,5 +48,15 @@ function publicUrl(bucket: string, path: string | null): string | null {
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
-/** Resolves a `schools.logo_path`. */
+/** Resolves a `teams.logo_path`. */
 export const logoUrl = (path: string | null) => publicUrl(LOGO_BUCKET, path);
+
+/**
+ * Unwraps a to-one embed. PostgREST returns it as an object, but supabase-js
+ * widens the type to an array in some inference paths. Normalising here means
+ * a shape change can't blank out every opponent name silently.
+ */
+export function one<T>(embed: T | T[] | null | undefined): T | null {
+  if (Array.isArray(embed)) return embed[0] ?? null;
+  return embed ?? null;
+}

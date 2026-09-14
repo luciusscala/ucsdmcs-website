@@ -1,41 +1,46 @@
 import { cached } from "@/lib/data/cache";
 import { getSeasonFor } from "@/lib/data/season";
-import { logoUrl, supabase } from "@/lib/supabase";
+import { logoUrl, one, supabase } from "@/lib/supabase";
 
-/** Shape returned by the query below. Mirrors the `games` table plus the
- *  embedded `schools` row reached through `opponent_id`. */
+/**
+ * Shape returned by the query below. A game is spread across four tables: the
+ * `games` row holds the result, its `events` row the kickoff and season, and
+ * `teams` and `fields` name the opponent and the venue.
+ */
 type GameRow = {
   id: string;
-  game_date: string;
   is_home: boolean;
-  location: string | null;
-  address: string | null;
   our_score: number | null;
   their_score: number | null;
+  film_link: string | null;
+  event: { event_date: string } | null;
   opponent: { name: string; logo_path: string | null } | null;
+  field: { name: string; area: string | null; maps_address: string | null } | null;
 };
 
 /** The domain shape the UI works with. Nothing outside this file sees a raw row. */
 export type Game = {
   id: string;
-  /** ISO 8601, straight from `game_date`. */
+  /** ISO 8601, straight from the event's `event_date`. */
   kickoff: string;
   opponent: string;
-  /** Already resolved to a public URL; null when the school has no crest. */
+  /** Already resolved to a public URL; null when the team has no crest. */
   opponentLogo: string | null;
   isHome: boolean;
   /** The venue as it should read on the page: "John Muir Field, La Jolla". */
   location: string | null;
-  /** Street address, only for building a map link. Null on most rows. */
+  /** The field's map address, only for building a directions link. */
   address: string | null;
   ourScore: number | null;
   theirScore: number | null;
+  /** Match footage, once someone has uploaded it. */
+  filmLink: string | null;
 };
 
 export type Outcome = "W" | "L" | "D";
 
 /**
- * Turn-by-turn directions to a game's address. Google's universal URL form
+ * Turn-by-turn directions to a game's field. Google's universal URL form
  * needs no API key and is handled by the Google Maps app on both iOS and
  * Android, falling back to the web map anywhere else.
  *
@@ -49,31 +54,41 @@ export const directionsUrl = (game: Game) =>
       )}`
     : null;
 
+/**
+ * `!inner` on the event: a game with no event has no date, so it can't be
+ * placed on the schedule, and the season filter below needs the join anyway.
+ */
 const SELECT =
-  "id, game_date, is_home, location, address, our_score, their_score, opponent:schools(name, logo_path)";
+  "id, is_home, our_score, their_score, film_link, event:events!inner(event_date), opponent:teams(name, logo_path), field:fields(name, area, maps_address)";
 
-function toGame(row: GameRow): Game {
-  // A to-one embed comes back as an object, but supabase-js widens the type to
-  // an array in some inference paths. Normalise so a shape change can't blank
-  // out every opponent name silently.
-  const school = Array.isArray(row.opponent) ? row.opponent[0] : row.opponent;
+/** "John Muir Field, La Jolla" — the area is dropped when the field has none. */
+export const fieldLabel = (field: { name: string; area: string | null }) =>
+  field.area ? `${field.name}, ${field.area}` : field.name;
+
+function toGame(row: GameRow): Game | null {
+  const event = one(row.event);
+  if (!event) return null;
+
+  const team = one(row.opponent);
+  const field = one(row.field);
 
   return {
     id: row.id,
-    kickoff: row.game_date,
-    opponent: school?.name ?? "TBD",
-    opponentLogo: logoUrl(school?.logo_path ?? null),
+    kickoff: event.event_date,
+    opponent: team?.name ?? "TBD",
+    opponentLogo: logoUrl(team?.logo_path ?? null),
     isHome: row.is_home,
-    location: row.location,
-    address: row.address,
+    location: field ? fieldLabel(field) : null,
+    address: field?.maps_address ?? null,
     ourScore: row.our_score,
     theirScore: row.their_score,
+    filmLink: row.film_link,
   };
 }
 
 /**
- * A season's games, oldest first. Postgres does the ordering. Without an
- * explicit id this falls back to whichever season the schedule defaults to.
+ * A season's games, oldest first. Without an explicit id this falls back to
+ * whichever season the schedule defaults to.
  */
 export const getGames = cached("games", async (
   seasonId?: string,
@@ -88,12 +103,16 @@ export const getGames = cached("games", async (
   const { data, error } = await supabase
     .from("games")
     .select(SELECT)
-    .eq("season_id", season.id)
-    .order("game_date", { ascending: true });
+    .eq("event.season_id", season.id);
 
   if (error) throw new Error(`Failed to load games: ${error.message}`);
 
-  return (data as unknown as GameRow[]).map(toGame);
+  // Sorted here rather than in SQL: the kickoff lives on the embedded event,
+  // which can't order the parent rows in PostgREST.
+  return (data as unknown as GameRow[])
+    .map(toGame)
+    .filter((game): game is Game => game !== null)
+    .sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
 });
 
 /** There is no status column, so a game counts as played once both scores land. */

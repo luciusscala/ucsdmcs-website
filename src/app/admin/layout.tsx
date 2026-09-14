@@ -6,7 +6,11 @@ import { isAdmin } from "@/lib/admin-auth";
 const NAV = [
   { href: "/admin/roster", label: "Roster" },
   { href: "/admin/schedule", label: "Schedule" },
-  { href: "/admin/schools", label: "Schools" },
+  { href: "/admin/practices", label: "Practices" },
+  { href: "/admin/socials", label: "Socials" },
+  { href: "/admin/tournaments", label: "Tournaments" },
+  { href: "/admin/teams", label: "Teams" },
+  { href: "/admin/fields", label: "Fields" },
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
@@ -19,7 +23,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <div className="border-b border-white/15">
           <div className="container-page flex items-center gap-5 py-3">
             <span className="text-sm font-semibold text-yellow">Admin</span>
-            <nav className="flex gap-5 text-sm text-white/70">
+            <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/70">
               {NAV.map((item) => (
                 <Link key={item.href} href={item.href} className="hover:text-white">
                   {item.label}

@@ -1,17 +1,17 @@
 import { cached } from "@/lib/data/cache";
 import { getSeasonFor } from "@/lib/data/season";
-import { supabase } from "@/lib/supabase";
+import { one, supabase } from "@/lib/supabase";
 
 /**
- * One `player_seasons` row with its `players` row embedded. Class, position
- * and number live on the join because they change season to season; name
- * and hometown belong to the person.
+ * One `roster` row with its `people` row embedded. Class, position and
+ * number live on the roster because they change season to season; name and
+ * hometown belong to the person.
  */
-type PlayerSeasonRow = {
+type RosterRow = {
   class: string;
   position: string;
   number: number | null;
-  player: {
+  person: {
     id: string;
     name: string;
     hometown: string | null;
@@ -29,10 +29,8 @@ export type Player = {
   hometown: string | null;
 };
 
-function toPlayer(row: PlayerSeasonRow): Player | null {
-  // A to-one embed comes back as an object, but supabase-js widens the type to
-  // an array in some inference paths.
-  const person = Array.isArray(row.player) ? row.player[0] : row.player;
+function toPlayer(row: RosterRow): Player | null {
+  const person = one(row.person);
   if (!person) return null;
 
   return {
@@ -56,19 +54,19 @@ export const getPlayers = cached("players", async (
 
   const season = seasonId
     ? { id: seasonId }
-    : await getSeasonFor("player_seasons");
+    : await getSeasonFor("roster");
   if (!season) return [];
 
   const { data, error } = await supabase
-    .from("player_seasons")
-    .select("class, position, number, player:players(id, name, hometown)")
+    .from("roster")
+    .select("class, position, number, person:people(id, name, hometown)")
     .eq("season_id", season.id);
 
   if (error) throw new Error(`Failed to load players: ${error.message}`);
 
   // Sorted here rather than in SQL: the tiebreaker is the player's name, which
   // lives on the embedded table and can't order the parent rows in PostgREST.
-  return (data as unknown as PlayerSeasonRow[])
+  return (data as unknown as RosterRow[])
     .map(toPlayer)
     .filter((player): player is Player => player !== null)
     .sort(

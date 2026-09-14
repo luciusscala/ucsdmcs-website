@@ -67,43 +67,38 @@ const normalize = (name: string) =>
     .trim();
 
 /**
- * Genuine disagreements between what SportsEngine calls a school and what
- * `schools.name` calls it. Everything else matches once normalised, so this
- * stays short by design — an entry here means the two really do differ.
- *
- * Applied to both sides, so either spelling resolves to the same key.
+ * Us. Only used to mark our own row — our crest comes out of `teams` along
+ * with everyone else's, so this table treats all seven teams alike.
  */
-const ALIASES: Record<string, string> = {
-  "loyola marymount": "lmu",
-};
-
-const schoolKey = (name: string) => {
-  const key = normalize(name);
-  return ALIASES[key] ?? key;
-};
+const UCSD = normalize("UC San Diego");
 
 /**
- * Us. Only used to mark our own row — our crest comes out of `schools`
- * along with everyone else's, so this table treats all seven teams alike.
+ * Crests by normalised team name. A team SportsEngine names differently from
+ * `teams.name` carries that spelling in `data_alias`, and is indexed under
+ * both so either resolves to the same crest.
+ *
+ * Empty when Supabase isn't configured, which degrades to monograms rather
+ * than failing the page.
  */
-const UCSD = schoolKey("UC San Diego");
-
-/** Crests by normalised school name. Empty when Supabase isn't configured,
- *  which degrades to monograms rather than failing the page. */
-async function schoolLogos(): Promise<Map<string, string>> {
+async function teamLogos(): Promise<Map<string, string>> {
   if (!supabase) return new Map();
 
-  const { data, error } = await supabase.from("schools").select("name, logo_path");
-  if (error) throw new Error(`Failed to load schools: ${error.message}`);
+  const { data, error } = await supabase
+    .from("teams")
+    .select("name, logo_path, data_alias");
+  if (error) throw new Error(`Failed to load teams: ${error.message}`);
 
   const logos = new Map<string, string>();
 
-  for (const school of (data ?? []) as {
+  for (const team of (data ?? []) as {
     name: string;
     logo_path: string | null;
+    data_alias: string | null;
   }[]) {
-    const url = logoUrl(school.logo_path);
-    if (url) logos.set(schoolKey(school.name), url);
+    const url = logoUrl(team.logo_path);
+    if (!url) continue;
+    logos.set(normalize(team.name), url);
+    if (team.data_alias) logos.set(normalize(team.data_alias), url);
   }
 
   return logos;
@@ -134,7 +129,7 @@ export async function getStandings(): Promise<TeamRecord[]> {
       headers: { Accept: "application/json" },
       next: { revalidate: REVALIDATE_SECONDS },
     }),
-    schoolLogos(),
+    teamLogos(),
   ]);
 
   if (!response.ok) {
@@ -153,7 +148,7 @@ export async function getStandings(): Promise<TeamRecord[]> {
   return records
     .map((record): TeamRecord => {
       const name = record.team_name ?? record.team_short_name ?? "TBD";
-      const key = schoolKey(name);
+      const key = normalize(name);
       const values = record.values ?? {};
 
       return {

@@ -45,7 +45,7 @@ export default async function AdminRosterPage(
   if (!isAdminConfigured()) return <SetupNotice />;
 
   const params = await props.searchParams;
-  const { seasons, season } = await adminSeason("player_seasons", params.season);
+  const { seasons, season } = await adminSeason("roster", params.season);
   const roster = season ? await listRoster(season.id) : [];
 
   if (!season) {
@@ -104,7 +104,7 @@ export default async function AdminRosterPage(
         {roster.map((entry) => (
           <div key={entry.entryId} className="rounded-lg bg-background p-4 text-foreground">
             <AdminForm action={updatePlayer} submitLabel="Save">
-              <input type="hidden" name="player_id" value={entry.playerId} />
+              <input type="hidden" name="person_id" value={entry.personId} />
               <input type="hidden" name="entry_id" value={entry.entryId} />
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -147,7 +147,7 @@ export default async function AdminRosterPage(
                 destructive
                 confirm={`Remove ${entry.name} from the ${season.year} roster? This cannot be undone.`}
               >
-                <input type="hidden" name="player_id" value={entry.playerId} />
+                <input type="hidden" name="person_id" value={entry.personId} />
                 <input type="hidden" name="entry_id" value={entry.entryId} />
               </AdminForm>
             </div>

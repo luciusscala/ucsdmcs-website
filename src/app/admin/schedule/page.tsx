@@ -5,7 +5,7 @@ import { AdminForm } from "@/components/admin/admin-form";
 import { SeasonPicker } from "@/components/season-picker";
 import { SetupNotice } from "@/components/admin/setup-notice";
 import { requireAdmin } from "@/lib/admin-auth";
-import { adminSeason, listGames, listSchools } from "@/lib/data/admin";
+import { adminSeason, listFields, listGames, listTeams } from "@/lib/data/admin";
 import { isAdminConfigured } from "@/lib/supabase-admin";
 import { formatGameDate, formatTime, toDateTimeLocal } from "@/lib/format";
 
@@ -18,9 +18,10 @@ export default async function AdminSchedulePage(
   if (!isAdminConfigured()) return <SetupNotice />;
 
   const params = await props.searchParams;
-  const [{ seasons, season }, schools] = await Promise.all([
+  const [{ seasons, season }, teams, fields] = await Promise.all([
     adminSeason("games", params.season),
-    listSchools(),
+    listTeams(),
+    listFields(),
   ]);
   const games = season ? await listGames(season.id) : [];
 
@@ -42,9 +43,9 @@ export default async function AdminSchedulePage(
       <section className="mt-6 rounded-lg bg-background p-5 text-foreground">
         <h2 className="headline text-lg">Add game</h2>
 
-        {schools.length === 0 ? (
+        {teams.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
-            Add a school first — a game needs an opponent.
+            Add a team first — a game needs an opponent.
           </p>
         ) : (
           <AdminForm action={createGame} submitLabel="Add game" className="mt-4">
@@ -59,21 +60,23 @@ export default async function AdminSchedulePage(
                 <label className="field-label" htmlFor="opponent_id">Opponent</label>
                 <select id="opponent_id" name="opponent_id" required defaultValue="" className="field">
                   <option value="" disabled>Choose…</option>
-                  {schools.map((school) => (
-                    <option key={school.id} value={school.id}>{school.name}</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="field-label" htmlFor="location">Location</label>
-                <input id="location" name="location" className="field" placeholder="John Muir Field / La Jolla, CA" />
+                <label className="field-label" htmlFor="field_id">Field</label>
+                <select id="field_id" name="field_id" defaultValue="" className="field">
+                  <option value="">TBD</option>
+                  {fields.map((field) => (
+                    <option key={field.id} value={field.id}>{field.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="field-label" htmlFor="address">Address</label>
-                <input id="address" name="address" className="field" placeholder="9500 Gilman Dr, La Jolla, CA 92093" />
-                <p className="mt-1 text-xs text-muted">
-                  Optional. Turns the location into a map link.
-                </p>
+                <label className="field-label" htmlFor="film_link">Film link</label>
+                <input id="film_link" name="film_link" type="url" className="field" placeholder="https://" />
               </div>
               <div>
                 <label className="field-label" htmlFor="our_score">Our score</label>
@@ -109,6 +112,7 @@ export default async function AdminSchedulePage(
                 a misdated or misassigned fixture has to be fixable too. */}
             <AdminForm action={updateGame} submitLabel="Save" className="mt-3">
               <input type="hidden" name="id" value={game.id} />
+              <input type="hidden" name="event_id" value={game.eventId} />
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
@@ -119,8 +123,8 @@ export default async function AdminSchedulePage(
                   <label className="field-label">Opponent</label>
                   <select name="opponent_id" required defaultValue={game.opponentId ?? ""} className="field">
                     <option value="" disabled>Choose…</option>
-                    {schools.map((school) => (
-                      <option key={school.id} value={school.id}>{school.name}</option>
+                    {teams.map((team) => (
+                      <option key={team.id} value={team.id}>{team.name}</option>
                     ))}
                   </select>
                 </div>
@@ -129,12 +133,17 @@ export default async function AdminSchedulePage(
                   Home game
                 </label>
                 <div>
-                  <label className="field-label">Location</label>
-                  <input name="location" defaultValue={game.location ?? ""} className="field" />
+                  <label className="field-label">Field</label>
+                  <select name="field_id" defaultValue={game.fieldId ?? ""} className="field">
+                    <option value="">TBD</option>
+                    {fields.map((field) => (
+                      <option key={field.id} value={field.id}>{field.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="field-label">Address</label>
-                  <input name="address" defaultValue={game.address ?? ""} className="field" placeholder="9500 Gilman Dr, La Jolla, CA 92093" />
+                  <label className="field-label">Film link</label>
+                  <input name="film_link" type="url" defaultValue={game.filmLink ?? ""} className="field" placeholder="https://" />
                 </div>
                 <div className="flex items-end gap-3">
                   <div className="w-full">
@@ -159,6 +168,7 @@ export default async function AdminSchedulePage(
                 confirm={`Delete ${game.isHome ? "vs" : "at"} ${game.opponent}? This cannot be undone.`}
               >
                 <input type="hidden" name="id" value={game.id} />
+                <input type="hidden" name="event_id" value={game.eventId} />
               </AdminForm>
             </div>
           </div>
