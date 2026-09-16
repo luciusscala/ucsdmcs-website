@@ -97,6 +97,23 @@ export async function createTeam(_state: ActionState, data: FormData) {
   return null;
 }
 
+/** The text columns on a `fields` row; the photo is handled by the caller. */
+function fieldColumns(data: FormData) {
+  return {
+    area: text(data, "area"),
+    maps_address: text(data, "maps_address"),
+    recommended_parking: text(data, "recommended_parking"),
+  };
+}
+
+/** Every admin page with a field dropdown, plus the fields page itself. */
+function revalidateFieldPages() {
+  revalidatePath("/admin/fields");
+  revalidatePath("/admin/schedule");
+  revalidatePath("/admin/practices");
+  revalidatePath("/admin/tournaments");
+}
+
 export async function createField(_state: ActionState, data: FormData) {
   await requireAdmin();
 
@@ -105,20 +122,58 @@ export async function createField(_state: ActionState, data: FormData) {
 
   const picturePath = await uploadImage(data, "picture", "field_pictures");
 
-  const { error } = await requireAdminClient().from("fields").insert({
-    name,
-    area: text(data, "area"),
-    maps_address: text(data, "maps_address"),
-    recommended_parking: text(data, "recommended_parking"),
-    picture_path: picturePath,
-  });
+  const { error } = await requireAdminClient()
+    .from("fields")
+    .insert({ name, ...fieldColumns(data), picture_path: picturePath });
 
   if (error) return { error: error.message };
 
   // A new field changes nothing public until a game is assigned to it, so
   // only the admin pages that list fields need refreshing.
-  revalidatePath("/admin/fields");
-  revalidatePath("/admin/schedule");
+  revalidateFieldPages();
+  return null;
+}
+
+export async function updateField(_state: ActionState, data: FormData) {
+  await requireAdmin();
+
+  const id = text(data, "id");
+  const name = text(data, "name");
+  if (!id || !name) return { error: "Name is required." };
+
+  // An empty file input means "keep the current photo", not "remove it".
+  const picturePath = await uploadImage(data, "picture", "field_pictures");
+
+  const { error } = await requireAdminClient()
+    .from("fields")
+    .update({
+      name,
+      ...fieldColumns(data),
+      ...(picturePath ? { picture_path: picturePath } : {}),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  // Unlike a create, an edit reaches every game already played on the field.
+  revalidatePublic();
+  revalidateFieldPages();
+  return null;
+}
+
+export async function deleteField(_state: ActionState, data: FormData) {
+  await requireAdmin();
+
+  const id = text(data, "id");
+  if (!id) return { error: "Missing field." };
+
+  // Games, practices and tournaments reference the field, so the database
+  // refuses to delete one that is still in use; its message is shown as-is.
+  const { error } = await requireAdminClient().from("fields").delete().eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePublic();
+  revalidateFieldPages();
   return null;
 }
 

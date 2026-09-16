@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { createField } from "@/app/admin/actions";
+import { createField, deleteField, updateField } from "@/app/admin/actions";
 import { AdminForm } from "@/components/admin/admin-form";
 import { SetupNotice } from "@/components/admin/setup-notice";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -31,7 +31,7 @@ export default async function AdminFieldsPage() {
               <label className="field-label" htmlFor="area">Area</label>
               <input id="area" name="area" className="field" placeholder="La Jolla" />
               <p className="mt-1 text-xs text-muted">
-                Shown after the name on the schedule: &ldquo;John Muir Field, La Jolla&rdquo;.
+                What the public schedule shows for the venue.
               </p>
             </div>
             <div>
@@ -53,24 +53,54 @@ export default async function AdminFieldsPage() {
         </AdminForm>
       </section>
 
-      <section className="mt-8 rounded-lg bg-background p-5 text-foreground">
+      <section className="mt-8 space-y-3">
         <h2 className="headline text-lg">{fields.length} fields</h2>
-        <ul className="mt-3 divide-y divide-border">
-          {fields.map((field) => (
-            <li key={field.id} className="py-2 text-sm">
-              <p className="font-medium">{field.label}</p>
-              <p className="text-muted">
-                {[
-                  field.maps_address ?? "no address",
-                  field.recommended_parking && `park: ${field.recommended_parking}`,
-                  field.picture_path ?? "no photo",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            </li>
-          ))}
-        </ul>
+
+        {fields.map((field) => (
+          <div key={field.id} className="rounded-lg bg-background p-4 text-foreground">
+            <p className="headline text-lg">{field.label}</p>
+            <p className="text-sm text-muted">{field.picture_path ?? "no photo"}</p>
+
+            <AdminForm action={updateField} submitLabel="Save" className="mt-3">
+              <input type="hidden" name="id" value={field.id} />
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="field-label">Name</label>
+                  <input name="name" required defaultValue={field.name} className="field" />
+                </div>
+                <div>
+                  <label className="field-label">Area</label>
+                  <input name="area" defaultValue={field.area ?? ""} className="field" placeholder="La Jolla" />
+                </div>
+                <div>
+                  <label className="field-label">Address</label>
+                  <input name="maps_address" defaultValue={field.maps_address ?? ""} className="field" />
+                </div>
+                <div>
+                  <label className="field-label">Recommended parking</label>
+                  <input name="recommended_parking" defaultValue={field.recommended_parking ?? ""} className="field" />
+                </div>
+                <div>
+                  <label className="field-label">Photo</label>
+                  <input name="picture" type="file" accept="image/*" className="field" />
+                  <p className="mt-1 text-xs text-muted">Leave empty to keep the current photo.</p>
+                </div>
+              </div>
+            </AdminForm>
+
+            <div className="mt-3 flex justify-end border-t border-border pt-3">
+              <AdminForm
+                action={deleteField}
+                submitLabel="Delete field"
+                destructive
+                confirm={`Delete ${field.name}? This cannot be undone.`}
+              >
+                <input type="hidden" name="id" value={field.id} />
+              </AdminForm>
+            </div>
+          </div>
+        ))}
       </section>
     </div>
   );

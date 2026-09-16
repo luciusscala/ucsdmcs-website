@@ -38,7 +38,13 @@ export function MatchRow({ game }: { game: Game }) {
           )}
         </p>
         <p className="mt-0.5 flex items-center gap-2">
-          <span className="shrink-0 bg-navy px-1.5 py-0.5 text-xs font-bold uppercase text-yellow">
+          {/* Same badge either way, but only home games get the navy and gold;
+              away games go grey so the two read apart at a glance. */}
+          <span
+            className={`shrink-0 px-1.5 py-0.5 text-xs font-bold uppercase ${
+              game.isHome ? "bg-navy text-yellow" : "bg-muted text-white"
+            }`}
+          >
             {game.isHome ? "vs" : "at"}
           </span>
           <span className="headline truncate text-lg sm:text-xl">

@@ -27,7 +27,11 @@ export type Game = {
   /** Already resolved to a public URL; null when the team has no crest. */
   opponentLogo: string | null;
   isHome: boolean;
-  /** The venue as it should read on the page: "John Muir Field, La Jolla". */
+  /**
+   * Where the game is, as it should read on the page. Just the area ("La
+   * Jolla"), since the field name is noise beside a Directions link; a field
+   * with no area falls back to its name so the row never goes blank.
+   */
   location: string | null;
   /** The field's map address, only for building a directions link. */
   address: string | null;
@@ -78,7 +82,7 @@ function toGame(row: GameRow): Game | null {
     opponent: team?.name ?? "TBD",
     opponentLogo: logoUrl(team?.logo_path ?? null),
     isHome: row.is_home,
-    location: field ? fieldLabel(field) : null,
+    location: field ? (field.area ?? field.name) : null,
     address: field?.maps_address ?? null,
     ourScore: row.our_score,
     theirScore: row.their_score,
