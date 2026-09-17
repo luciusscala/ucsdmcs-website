@@ -27,7 +27,7 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
   {
     heading: "What the app collects",
     paragraphs: [
-      "The only thing the app asks you for is your phone number, which you enter when you first open it.",
+      "The only thing the app asks you for is your phone number, when you first open it, and it is optional: skip it and everything but the SMS reminders works the same.",
       "Beyond that, the app records what you do in it: your availability responses (\"Going\" or \"Not Going\") for each practice, game and event, and your hometown if you choose to add it in Settings.",
       "Your name, squad number, position and class year are not collected by the app. They are already in the club's roster, which captains manage through this website, and the app simply shows them.",
       "The app does not collect your location, contacts, photos, or anything else from your device, and it does not use analytics, advertising or tracking of any kind.",
@@ -60,8 +60,8 @@ const SECTIONS: { heading: string; paragraphs: string[] }[] = [
   {
     heading: "Your choices",
     paragraphs: [
-      "You can change your hometown at any time in Settings.",
-      "To update or remove your phone number, or to have your information deleted from the app entirely, email the club at the address below and it will be handled within a few days.",
+      "You can change your hometown at any time in Settings, and on the web version you can add, change or remove your phone number there too. Removing it stops the SMS reminders.",
+      "To update or remove your phone number in the iOS app, or to have your information deleted entirely, email the club at the address below and it will be handled within a few days.",
       "The app is intended for club members, who are university students and adults. It is not directed at children under 13.",
     ],
   },

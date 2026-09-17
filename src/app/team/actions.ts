@@ -2,7 +2,6 @@
 
 import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { EVENT_TYPE } from "@/lib/data/events";
 import {
@@ -22,6 +21,7 @@ import {
 } from "@/lib/data/team";
 import { fromDateTimeLocal } from "@/lib/format";
 import { requireAdminClient } from "@/lib/supabase-admin";
+import { teamRedirect } from "@/lib/team-path";
 import {
   clearTeamSession,
   readTeamSession,
@@ -37,6 +37,24 @@ const text = (data: FormData, key: string) => {
   const value = data.get(key);
   return typeof value === "string" && value.trim() ? value.trim() : null;
 };
+
+/**
+ * A phone field as digits, the way the app stores it, or "" when it was left
+ * blank. Ten digits is a US number without the country code; eleven starting
+ * with 1 is the same number with it.
+ */
+const digits = (data: FormData) => (text(data, "phone") ?? "").replace(/\D/g, "");
+
+/** The complaint about a number that was typed but isn't one. Blank is fine. */
+const badPhone = (phone: string) =>
+  phone && phone.length < 10 ? "Enter a 10-digit phone number." : null;
+
+/** The caller's own row in `people`, which is where a profile edit lands. */
+async function findMe(rosterId: string) {
+  const season = await getCurrentSeason();
+  if (!season) return undefined;
+  return (await getRoster(season.id)).find((entry) => entry.rosterId === rosterId);
+}
 
 /** Every page under /team, in one call. Writes here are small enough that
  *  refreshing the whole section beats tracking which page shows what. */
@@ -63,7 +81,7 @@ export async function joinTeam(_state: ActionState, data: FormData) {
     phoneEntered: false,
     captain: false,
   });
-  redirect("/team/join/roster");
+  return teamRedirect("/join/roster");
 }
 
 /**
@@ -73,45 +91,59 @@ export async function joinTeam(_state: ActionState, data: FormData) {
  */
 export async function selectRoster(data: FormData) {
   const session = await readTeamSession();
-  if (!session) redirect("/team/join");
+  if (!session) return teamRedirect("/join");
 
   const rosterId = text(data, "roster_id");
   const season = await getCurrentSeason();
   const member = season
     ? (await getRoster(season.id)).find((entry) => entry.rosterId === rosterId)
     : undefined;
-  if (!member) redirect("/team/join/roster");
+  if (!member) return teamRedirect("/join/roster");
 
   // A player who already gave the app their number isn't asked twice.
   const phoneEntered = Boolean(member.phone);
 
   await writeTeamSession({ ...session, rosterId: member.rosterId, phoneEntered });
-  redirect(phoneEntered ? "/team" : "/team/join/phone");
+  return teamRedirect(phoneEntered ? "" : "/join/phone");
 }
 
+/**
+  * The number is optional. Leaving the field blank — or tapping Skip, which
+  * posts nothing at all — finishes onboarding with no number on file; the
+  * player simply won't be in a captain's reminder. `phoneEntered` records
+  * that the step is behind them, not that a number exists, and Settings is
+  * where one gets added later.
+  */
 export async function savePhone(_state: ActionState, data: FormData) {
   const session = await readTeamSession();
-  if (!session?.rosterId) redirect("/team/join");
+  if (!session?.rosterId) return teamRedirect("/join");
 
-  // Digits only, as the app stores it. Ten is a US number without the
-  // country code; eleven starting with 1 is the same number with it.
-  const phone = (text(data, "phone") ?? "").replace(/\D/g, "");
-  if (phone.length < 10) return { error: "Enter a 10-digit phone number." };
+  const phone = digits(data);
+  const complaint = badPhone(phone);
+  if (complaint) return { error: complaint };
 
-  const season = await getCurrentSeason();
-  const member = season
-    ? (await getRoster(season.id)).find((entry) => entry.rosterId === session.rosterId)
-    : undefined;
-  if (!member) return { error: "Your roster entry could not be found." };
+  if (phone) {
+    const member = await findMe(session.rosterId);
+    if (!member) return { error: "Your roster entry could not be found." };
 
-  const { error } = await requireAdminClient()
-    .from("people")
-    .update({ phone })
-    .eq("id", member.personId);
-  if (error) return { error: error.message };
+    const { error } = await requireAdminClient()
+      .from("people")
+      .update({ phone })
+      .eq("id", member.personId);
+    if (error) return { error: error.message };
+  }
 
   await writeTeamSession({ ...session, phoneEntered: true });
-  redirect("/team");
+  return teamRedirect("");
+}
+
+/** The "Skip" button under the phone form: the same, with nothing typed. */
+export async function skipPhone() {
+  const session = await readTeamSession();
+  if (!session?.rosterId) return teamRedirect("/join");
+
+  await writeTeamSession({ ...session, phoneEntered: true });
+  return teamRedirect("");
 }
 
 // MARK: Availability
@@ -184,18 +216,21 @@ export async function bulkAction(_state: ActionState, data: FormData) {
 
 // MARK: Settings
 
-export async function updateHometown(_state: ActionState, data: FormData) {
+/** Settings' one profile form. An emptied phone field takes the number off
+ *  file, which is how a player opts back out of reminders. */
+export async function updateProfile(_state: ActionState, data: FormData) {
   const session = await requireTeamSession();
 
-  const season = await getCurrentSeason();
-  const member = season
-    ? (await getRoster(season.id)).find((entry) => entry.rosterId === session.rosterId)
-    : undefined;
+  const phone = digits(data);
+  const complaint = badPhone(phone);
+  if (complaint) return { error: complaint };
+
+  const member = await findMe(session.rosterId);
   if (!member) return { error: "Your roster entry could not be found." };
 
   const { error } = await requireAdminClient()
     .from("people")
-    .update({ hometown: text(data, "hometown") ?? "" })
+    .update({ hometown: text(data, "hometown") ?? "", phone: phone || null })
     .eq("id", member.personId);
   if (error) return { error: error.message };
 
@@ -228,7 +263,7 @@ export async function disableCaptain() {
 /** The app's "Leave Team": forget everything and start over. */
 export async function leaveTeam() {
   await clearTeamSession();
-  redirect("/team/join");
+  return teamRedirect("/join");
 }
 
 /** The same, in the shape `AdminForm` wants so it can ask for confirmation. */
@@ -277,7 +312,7 @@ export async function createPractice(_state: ActionState, data: FormData) {
   if (error) return { error };
 
   revalidateTeam();
-  redirect("/team");
+  return teamRedirect("");
 }
 
 /**
@@ -334,7 +369,7 @@ export async function createRepeatingPractices(_state: ActionState, data: FormDa
   }
 
   revalidateTeam();
-  redirect("/team");
+  return teamRedirect("");
 }
 
 export async function createGame(_state: ActionState, data: FormData) {
@@ -360,7 +395,7 @@ export async function createGame(_state: ActionState, data: FormData) {
 
   revalidatePublic();
   revalidateTeam();
-  redirect("/team");
+  return teamRedirect("");
 }
 
 export async function updatePractice(_state: ActionState, data: FormData) {
@@ -381,7 +416,7 @@ export async function updatePractice(_state: ActionState, data: FormData) {
   if (error) return { error };
 
   revalidateTeam();
-  redirect(`/team/events/${eventId}`);
+  return teamRedirect(`/events/${eventId}`);
 }
 
 export async function updateGame(_state: ActionState, data: FormData) {
@@ -401,7 +436,7 @@ export async function updateGame(_state: ActionState, data: FormData) {
 
   revalidatePublic();
   revalidateTeam();
-  redirect(`/team/events/${eventId}`);
+  return teamRedirect(`/events/${eventId}`);
 }
 
 export async function deleteEvent(_state: ActionState, data: FormData) {
@@ -416,7 +451,7 @@ export async function deleteEvent(_state: ActionState, data: FormData) {
 
   if (event.type === "game") revalidatePublic();
   revalidateTeam();
-  redirect("/team");
+  return teamRedirect("");
 }
 
 // MARK: Captain — reminders

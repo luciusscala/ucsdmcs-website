@@ -11,6 +11,7 @@ import {
   getRoster,
 } from "@/lib/data/team";
 import { formatReminderDate } from "@/lib/format";
+import { teamBase } from "@/lib/team-path";
 import { requireCaptain } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Send Reminder" };
@@ -32,10 +33,11 @@ export default async function RemindPage(props: PageProps<"/team/events/[id]/rem
   await requireCaptain();
   const { id } = await props.params;
 
-  const [event, season, origin] = await Promise.all([
+  const [event, season, origin, base] = await Promise.all([
     getEvent(id),
     getCurrentSeason(),
     siteOrigin(),
+    teamBase(),
   ]);
   if (!event) notFound();
 
@@ -55,7 +57,7 @@ export default async function RemindPage(props: PageProps<"/team/events/[id]/rem
     status: statusOf.get(member.rosterId) ?? null,
   }));
 
-  const back = `/team/events/${event.id}`;
+  const back = `${base}/events/${event.id}`;
   const template = `Reminder: ${event.title} on ${formatReminderDate(event.date)}. Please respond!\n${origin}${back}`;
 
   return (

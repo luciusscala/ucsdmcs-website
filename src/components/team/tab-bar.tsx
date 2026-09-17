@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { teamPath } from "@/lib/app-host";
 import { isActivePath } from "@/lib/nav";
 
 /**
@@ -10,11 +11,12 @@ import { isActivePath } from "@/lib/nav";
  * thumb is; a plain row under the site header from `md` up.
  */
 const TABS = [
-  { href: "/team", label: "Schedule", exact: true },
-  { href: "/team/settings", label: "Settings", exact: false },
+  { path: "", label: "Schedule", exact: true },
+  { path: "/settings", label: "Settings", exact: false },
 ];
 
-export function TabBar() {
+/** `base` is this host's link prefix, from `teamBase()`. */
+export function TabBar({ base }: { base: string }) {
   const pathname = usePathname();
 
   return (
@@ -24,15 +26,14 @@ export function TabBar() {
     >
       <div className="container-page flex md:justify-start md:gap-6 md:py-3">
         {TABS.map((tab) => {
-          // Schedule owns only itself: `/team/settings` must not light it up.
-          const active = tab.exact
-            ? pathname === tab.href
-            : isActivePath(pathname, tab.href);
+          const href = teamPath(base, tab.path);
+          // Schedule owns only itself: `/settings` must not light it up.
+          const active = tab.exact ? pathname === href : isActivePath(pathname, href);
 
           return (
             <Link
-              key={tab.href}
-              href={tab.href}
+              key={href}
+              href={href}
               aria-current={active ? "page" : undefined}
               className={`flex-1 py-3 text-center text-sm font-semibold transition-colors duration-200 ease-out md:flex-none md:border-b-2 md:py-1 ${
                 active

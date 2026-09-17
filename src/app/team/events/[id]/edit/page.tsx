@@ -8,6 +8,7 @@ import { FormCard } from "@/components/team/form-card";
 import { listFields, listTeams } from "@/lib/data/admin";
 import { getEvent } from "@/lib/data/team";
 import { toDateTimeLocal } from "@/lib/format";
+import { teamBase } from "@/lib/team-path";
 import { requireCaptain } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Edit Event" };
@@ -23,7 +24,7 @@ export default async function EditEventPage(
   const event = await getEvent(id);
   if (!event) notFound();
 
-  const back = `/team/events/${event.id}`;
+  const back = `${await teamBase()}/events/${event.id}`;
   const date = toDateTimeLocal(event.date);
 
   if (event.type === "practice") {

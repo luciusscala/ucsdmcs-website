@@ -4,7 +4,7 @@ import {
   disableCaptain,
   leaveTeamConfirmed,
   unlockCaptain,
-  updateHometown,
+  updateProfile,
 } from "@/app/team/actions";
 import { AdminForm } from "@/components/admin/admin-form";
 import { SectionHeading } from "@/components/section-heading";
@@ -40,15 +40,9 @@ export default async function TeamSettingsPage() {
                   <dd>#{me.number}</dd>
                 </div>
               )}
-              {me.phone && (
-                <div className="flex justify-between py-2.5">
-                  <dt className="text-muted">Phone</dt>
-                  <dd className="tabular-nums">{me.phone}</dd>
-                </div>
-              )}
             </dl>
 
-            <AdminForm action={updateHometown} submitLabel="Save Changes" className="mt-2">
+            <AdminForm action={updateProfile} submitLabel="Save Changes" className="mt-2">
               <label className="field-label" htmlFor="hometown">
                 Hometown
               </label>
@@ -59,6 +53,24 @@ export default async function TeamSettingsPage() {
                 placeholder="Add hometown"
                 className="field"
               />
+
+              <label className="field-label mt-4" htmlFor="phone">
+                Phone <span className="font-normal text-muted">(optional)</span>
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                defaultValue={me.phone ?? ""}
+                placeholder="Add a number for reminders"
+                className="field tabular-nums"
+              />
+              <p className="mt-2 text-xs text-muted">
+                Only captains see it, and only to text the team about practices
+                and games. Clear the field to stop receiving them.
+              </p>
             </AdminForm>
           </>
         )}

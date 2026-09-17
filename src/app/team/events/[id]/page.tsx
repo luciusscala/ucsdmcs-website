@@ -18,6 +18,7 @@ import {
   withoutResponse,
 } from "@/lib/data/team";
 import { formatDayHeading, formatTime } from "@/lib/format";
+import { teamBase } from "@/lib/team-path";
 import { requireTeamSession } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Event" };
@@ -29,6 +30,7 @@ const LINK =
 
 export default async function EventPage(props: PageProps<"/team/events/[id]">) {
   const session = await requireTeamSession();
+  const base = await teamBase();
   const { id } = await props.params;
 
   const [event, season] = await Promise.all([getEvent(id), getCurrentSeason()]);
@@ -62,17 +64,17 @@ export default async function EventPage(props: PageProps<"/team/events/[id]">) {
     <div className="container-page py-8 sm:py-10">
       <div className="rounded-xl bg-background p-4 text-foreground sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/team" className={LINK}>
+          <Link href={base || "/"} className={LINK}>
             ‹ Schedule
           </Link>
 
           {session.captain && (
             <div className="flex items-center gap-4">
-              <Link href={`/team/events/${event.id}/remind`} className={LINK}>
+              <Link href={`${base}/events/${event.id}/remind`} className={LINK}>
                 Remind
               </Link>
               {(event.type === "practice" || event.type === "game") && (
-                <Link href={`/team/events/${event.id}/edit`} className={LINK}>
+                <Link href={`${base}/events/${event.id}/edit`} className={LINK}>
                   Edit
                 </Link>
               )}

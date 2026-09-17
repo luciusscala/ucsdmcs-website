@@ -24,9 +24,12 @@ const BAR_BUTTON =
 export function EventList({
   groups,
   captain,
+  base,
 }: {
   groups: ScheduleGroup[];
   captain: boolean;
+  /** Link prefix for this host, from `teamBase()`. */
+  base: string;
 }) {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -120,7 +123,7 @@ export function EventList({
                   </label>
                 ) : (
                   <Link
-                    href={`/team/events/${item.id}`}
+                    href={`${base}/events/${item.id}`}
                     className="flex items-center px-3 py-3 transition hover:bg-surface active:bg-border"
                   >
                     <EventRow item={item} />

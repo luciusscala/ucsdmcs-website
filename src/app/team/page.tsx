@@ -9,19 +9,21 @@ import {
   groupByDay,
 } from "@/lib/data/team";
 import { formatTime } from "@/lib/format";
+import { teamBase } from "@/lib/team-path";
 import { requireTeamSession } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Team Schedule" };
 
 /** The app's "+" menu: three ways to add to the schedule, captains only. */
 const ADD_LINKS = [
-  { href: "/team/new/practice", label: "Add Practice" },
-  { href: "/team/new/practices", label: "Add Repeating Practices" },
-  { href: "/team/new/game", label: "Add Game" },
+  { path: "/new/practice", label: "Add Practice" },
+  { path: "/new/practices", label: "Add Repeating Practices" },
+  { path: "/new/game", label: "Add Game" },
 ];
 
 export default async function TeamSchedulePage() {
   const session = await requireTeamSession();
+  const base = await teamBase();
 
   const season = await getCurrentSeason();
   const events = season ? await getUpcomingEvents(season.id) : [];
@@ -62,9 +64,9 @@ export default async function TeamSchedulePage() {
               </summary>
               <ul className="absolute right-0 z-10 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-background shadow-lg">
                 {ADD_LINKS.map((link) => (
-                  <li key={link.href}>
+                  <li key={link.path}>
                     <Link
-                      href={link.href}
+                      href={`${base}${link.path}`}
                       className="block px-4 py-2.5 text-sm transition hover:bg-surface"
                     >
                       {link.label}
@@ -85,7 +87,7 @@ export default async function TeamSchedulePage() {
           </div>
         ) : (
           <div className="mt-4">
-            <EventList groups={groups} captain={session.captain} />
+            <EventList groups={groups} captain={session.captain} base={base} />
           </div>
         )}
       </div>

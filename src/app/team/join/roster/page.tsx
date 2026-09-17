@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-
 import { leaveTeam, selectRoster } from "@/app/team/actions";
 import { OnboardingCard } from "@/components/team/onboarding-card";
 import { getCurrentSeason, getRoster } from "@/lib/data/team";
+import { teamRedirect } from "@/lib/team-path";
 import { isComplete, readTeamSession } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Select your name" };
 
 export default async function RosterStepPage() {
   const session = await readTeamSession();
-  if (!session) redirect("/team/join");
-  if (isComplete(session)) redirect("/team");
+  if (!session) return teamRedirect("/join");
+  if (isComplete(session)) return teamRedirect("");
 
   const season = await getCurrentSeason();
   const roster = season ? await getRoster(season.id) : [];

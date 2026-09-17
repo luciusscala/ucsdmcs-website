@@ -33,6 +33,12 @@ export function SiteFooter() {
               FAQ
             </Link>
             <Link
+              href="/support"
+              className="rounded-md px-2 py-1 text-sm text-white/70 transition hover:text-white"
+            >
+              Support
+            </Link>
+            <Link
               href="/privacy"
               className="rounded-md px-2 py-1 text-sm text-white/70 transition hover:text-white"
             >

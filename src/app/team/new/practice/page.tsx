@@ -5,6 +5,7 @@ import { AdminForm } from "@/components/admin/admin-form";
 import { PracticeFields } from "@/components/team/event-fields";
 import { FormCard } from "@/components/team/form-card";
 import { listFields } from "@/lib/data/admin";
+import { teamBase } from "@/lib/team-path";
 import { requireCaptain } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Add Practice" };
@@ -14,7 +15,7 @@ export default async function NewPracticePage() {
   const fields = await listFields();
 
   return (
-    <FormCard title="Add Practice" cancelHref="/team">
+    <FormCard title="Add Practice" cancelHref={(await teamBase()) || "/"}>
       <AdminForm action={createPractice} submitLabel="Add">
         <PracticeFields fields={fields} />
       </AdminForm>

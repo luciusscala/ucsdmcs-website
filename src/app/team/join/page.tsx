@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-
 import { joinTeam } from "@/app/team/actions";
 import { AdminForm } from "@/components/admin/admin-form";
 import { OnboardingCard } from "@/components/team/onboarding-card";
+import { teamRedirect } from "@/lib/team-path";
 import { isComplete, readTeamSession } from "@/lib/team-session";
 
 export const metadata: Metadata = { title: "Join your team" };
 
 export default async function JoinPage() {
   // Already in: the app never shows this screen again until "Leave Team".
-  if (isComplete(await readTeamSession())) redirect("/team");
+  if (isComplete(await readTeamSession())) return teamRedirect("");
 
   return (
     <OnboardingCard

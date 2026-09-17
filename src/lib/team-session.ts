@@ -1,8 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import "server-only";
+
+import { teamRedirect } from "@/lib/team-path";
 
 /**
  * The web counterpart of the iOS app's `@AppStorage` keys (`teamID`,
@@ -102,11 +103,13 @@ export const isComplete = (
 /**
  * Where an incomplete session should go next, mirroring the branches in the
  * app's `ContentView`: no team → join, no name → roster, no phone → phone.
+ * Relative to the team section, since the app subdomain serves it from the
+ * root — `teamRedirect` adds whichever prefix this host uses.
  */
 export function nextStep(session: TeamSession | null) {
-  if (!session) return "/team/join";
-  if (!session.rosterId) return "/team/join/roster";
-  if (!session.phoneEntered) return "/team/join/phone";
+  if (!session) return "/join";
+  if (!session.rosterId) return "/join/roster";
+  if (!session.phoneEntered) return "/join/phone";
   return null;
 }
 
@@ -118,13 +121,13 @@ export function nextStep(session: TeamSession | null) {
 export async function requireTeamSession(): Promise<MemberSession> {
   const session = await readTeamSession();
   const step = nextStep(session);
-  if (step || !isComplete(session)) redirect(step ?? "/team/join");
+  if (step || !isComplete(session)) return teamRedirect(step ?? "/join");
   return session;
 }
 
 /** As above, for the create/edit/delete/remind actions the app hides behind admin mode. */
 export async function requireCaptain(): Promise<MemberSession> {
   const session = await requireTeamSession();
-  if (!session.captain) redirect("/team");
+  if (!session.captain) return teamRedirect("");
   return session;
 }
