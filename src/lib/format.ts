@@ -12,6 +12,28 @@ const weekdayFormat = fmt({ weekday: "short" });
 const hourFormat = fmt({ hour: "numeric" });
 const hourMinuteFormat = fmt({ hour: "numeric", minute: "2-digit" });
 
+const dayHeadingFormat = fmt({ weekday: "long", month: "long", day: "numeric" });
+const dayKeyFormat = new Intl.DateTimeFormat("en-CA", {
+  timeZone: TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** "Wednesday, September 23" — the section heading the team schedule groups by. */
+export const formatDayHeading = (iso: string) =>
+  dayHeadingFormat.format(new Date(iso));
+
+/**
+ * "2026-09-23" in the team's zone, for grouping. `en-CA` is the locale whose
+ * numeric date happens to be ISO order, which keeps the key sortable.
+ */
+export const dayKey = (iso: string) => dayKeyFormat.format(new Date(iso));
+
+/** "Wednesday, September 23 at 6:00 PM" — how the app words a reminder. */
+export const formatReminderDate = (iso: string) =>
+  `${formatDayHeading(iso)} at ${hourMinuteFormat.format(new Date(iso))}`;
+
 /** "Oct 24 (Sat)" — each row carries its own month, so the list needs no headings. */
 export function formatGameDate(iso: string) {
   const date = new Date(iso);

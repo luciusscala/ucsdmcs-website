@@ -18,6 +18,10 @@
   --muted: #5a6b82;
   --border: #e3e7ed;
   --border-strong: #cbd3de;
+
+  /* Availability, matching the iOS app's asset colours (system green/red). */
+  --going: #34c758;
+  --not-going: #ff3b30;
 }
 
 @theme static inline {
@@ -31,6 +35,8 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-going: var(--going);
+  --color-not-going: var(--not-going);
   
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }

@@ -1,10 +1,15 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { PUBLIC_DATA } from "@/lib/data/cache";
-import { type EventType, EVENT_TYPE } from "@/lib/data/events";
+import { EVENT_TYPE } from "@/lib/data/events";
+import {
+  deleteWithEvent,
+  insertWithEvent,
+  revalidatePublic,
+  updateWithEvent,
+} from "@/lib/data/events-write";
 
 import {
   checkPassword,
@@ -16,25 +21,6 @@ import { fromDateTimeLocal } from "@/lib/format";
 import { requireAdminClient } from "@/lib/supabase-admin";
 
 export type ActionState = { error?: string } | null;
-
-/** Refresh both public pages after any write, rather than waiting out the ISR window. */
-function revalidatePublic() {
-  // The cached Supabase reads behind every public page. Without this the paths
-  // below would re-render against the same stale rows.
-  //
-  // `expire: 0` rather than the recommended "max": this runs immediately after
-  // the admin's own write, and stale-while-revalidate would hand them back the
-  // row they just changed. One blocking query is the right trade here.
-  revalidateTag(PUBLIC_DATA, { expire: 0 });
-
-  // Statically rendered pages hold their own output, so they need regenerating
-  // as well as re-reading. `/standings` joins crests from `teams`, so a new
-  // team logo shows up there too.
-  revalidatePath("/");
-  revalidatePath("/standings");
-  revalidatePath("/schedule");
-  revalidatePath("/roster");
-}
 
 const text = (data: FormData, key: string) => {
   const value = data.get(key);
@@ -183,81 +169,6 @@ const dateTime = (data: FormData, key: string) => {
   return value ? fromDateTimeLocal(value) : null;
 };
 
-/** Tables whose rows hang off an `events` row for their season and date. */
-type EventTable = "games" | "practices" | "social_events" | "tournaments";
-
-type Columns = Record<string, string | number | boolean | null>;
-
-/**
- * Creates the event first, since the row references it, then the row. If the
- * row fails the event is removed again, so a rejected submit can't leave a
- * dateless placeholder behind. Returns an error message, or null on success.
- */
-async function insertWithEvent(
-  table: EventTable,
-  eventType: EventType,
-  seasonId: string,
-  date: string,
-  columns: Columns,
-) {
-  const client = requireAdminClient();
-
-  const { data: event, error: eventError } = await client
-    .from("events")
-    .insert({ season_id: seasonId, event_type: eventType, event_date: date })
-    .select("id")
-    .single();
-
-  if (eventError) return eventError.message;
-
-  const { error } = await client
-    .from(table)
-    .insert({ event_id: event.id, ...columns });
-
-  if (error) {
-    await client.from("events").delete().eq("id", event.id);
-    return error.message;
-  }
-
-  return null;
-}
-
-/** The date lives on the event and everything else on the row. */
-async function updateWithEvent(
-  table: EventTable,
-  id: string,
-  eventId: string,
-  date: string,
-  columns: Columns,
-) {
-  const client = requireAdminClient();
-
-  const { error: eventError } = await client
-    .from("events")
-    .update({ event_date: date })
-    .eq("id", eventId);
-
-  if (eventError) return eventError.message;
-
-  const { error } = await client.from(table).update(columns).eq("id", id);
-  return error ? error.message : null;
-}
-
-/** Row first, so the foreign key to the event is satisfied at every step. */
-async function deleteWithEvent(table: EventTable, id: string, eventId: string) {
-  const client = requireAdminClient();
-
-  const { error } = await client.from(table).delete().eq("id", id);
-  if (error) return error.message;
-
-  const { error: eventError } = await client
-    .from("events")
-    .delete()
-    .eq("id", eventId);
-
-  return eventError ? eventError.message : null;
-}
-
 /** The columns a form can set on a `games` row; the kickoff lives on its event. */
 function gameColumns(data: FormData) {
   return {
@@ -309,7 +220,7 @@ export async function updateGame(_state: ActionState, data: FormData) {
   const kickoff = dateTime(data, "game_date");
   if (!kickoff) return { error: "Date is not a valid date and time." };
 
-  const error = await updateWithEvent("games", id, eventId, kickoff, gameColumns(data));
+  const error = await updateWithEvent("games", eventId, kickoff, gameColumns(data));
   if (error) return { error };
 
   revalidatePublic();
@@ -324,7 +235,7 @@ export async function deleteGame(_state: ActionState, data: FormData) {
   const eventId = text(data, "event_id");
   if (!id || !eventId) return { error: "Missing game." };
 
-  const error = await deleteWithEvent("games", id, eventId);
+  const error = await deleteWithEvent("games", eventId);
   if (error) return { error };
 
   revalidatePublic();
@@ -379,7 +290,7 @@ export async function updatePractice(_state: ActionState, data: FormData) {
   const date = dateTime(data, "date");
   if (!date) return { error: "Date is not a valid date and time." };
 
-  const error = await updateWithEvent("practices", id, eventId, date, practiceColumns(data));
+  const error = await updateWithEvent("practices", eventId, date, practiceColumns(data));
   if (error) return { error };
 
   revalidatePath("/admin/practices");
@@ -393,7 +304,7 @@ export async function deletePractice(_state: ActionState, data: FormData) {
   const eventId = text(data, "event_id");
   if (!id || !eventId) return { error: "Missing practice." };
 
-  const error = await deleteWithEvent("practices", id, eventId);
+  const error = await deleteWithEvent("practices", eventId);
   if (error) return { error };
 
   revalidatePath("/admin/practices");
@@ -448,7 +359,7 @@ export async function updateSocialEvent(_state: ActionState, data: FormData) {
   const date = dateTime(data, "date");
   if (!date) return { error: "Date is not a valid date and time." };
 
-  const error = await updateWithEvent("social_events", id, eventId, date, socialEventColumns(data));
+  const error = await updateWithEvent("social_events", eventId, date, socialEventColumns(data));
   if (error) return { error };
 
   revalidatePath("/admin/socials");
@@ -462,7 +373,7 @@ export async function deleteSocialEvent(_state: ActionState, data: FormData) {
   const eventId = text(data, "event_id");
   if (!id || !eventId) return { error: "Missing social event." };
 
-  const error = await deleteWithEvent("social_events", id, eventId);
+  const error = await deleteWithEvent("social_events", eventId);
   if (error) return { error };
 
   revalidatePath("/admin/socials");
@@ -514,7 +425,7 @@ export async function updateTournament(_state: ActionState, data: FormData) {
   const date = dateTime(data, "date");
   if (!date) return { error: "Date is not a valid date and time." };
 
-  const error = await updateWithEvent("tournaments", id, eventId, date, tournamentColumns(data));
+  const error = await updateWithEvent("tournaments", eventId, date, tournamentColumns(data));
   if (error) return { error };
 
   revalidatePath("/admin/tournaments");
@@ -528,7 +439,7 @@ export async function deleteTournament(_state: ActionState, data: FormData) {
   const eventId = text(data, "event_id");
   if (!id || !eventId) return { error: "Missing tournament." };
 
-  const error = await deleteWithEvent("tournaments", id, eventId);
+  const error = await deleteWithEvent("tournaments", eventId);
   if (error) return { error };
 
   revalidatePath("/admin/tournaments");
